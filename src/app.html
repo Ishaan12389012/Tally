@@ -57,9 +57,9 @@ button { cursor: pointer; border: 0; background: none; padding: 0 }
 .meter > b { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--fg); border-radius: 2px; opacity: .55 }
 .hero-foot { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 13.5px; flex-wrap: wrap }
 .hero-foot strong { color: var(--fg); font-weight: 600 }
-.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; border-top: 1px solid var(--line); padding-top: 14px }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; border-top: 1px solid var(--line); padding-top: 14px }
 .stats div { display: flex; flex-direction: column; gap: 2px; min-width: 0 }
-.stats .num { font-size: 18px; font-weight: 700 }
+.stats .num { font-size: clamp(14px, 4.2vw, 18px); font-weight: 700; overflow-wrap: anywhere }
 
 .quick { display: flex; gap: 8px; background: var(--surface); border-radius: 16px; padding: 6px 6px 6px 14px; align-items: center; border: 1.5px solid transparent }
 .quick:focus-within { border-color: var(--accent) }
@@ -92,6 +92,11 @@ section { display: flex; flex-direction: column; gap: 10px }
 .row .sub { font-size: 12.5px; color: var(--muted) }
 .row .amt { font-weight: 700; font-size: 15.5px; white-space: nowrap }
 .amt.in { color: var(--good) }
+.amt.save { color: var(--accent) }
+.cat-row .right .sub.done { color: var(--good); font-weight: 600 }
+.list-label { padding: 14px 14px 6px; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); border-top: 1px solid var(--line) }
+.setup-row .kind { flex: none; padding: 5px 9px; border-radius: 99px; font-size: 12px; font-weight: 600; background: var(--surface-2); color: var(--muted) }
+.setup-row .kind.on { background: var(--accent-soft); color: var(--accent) }
 
 .cat-row .bar { height: 6px; background: var(--surface-2); border-radius: 99px; margin-top: 6px; overflow: hidden }
 .cat-row .bar i { display: block; height: 100% ; border-radius: 99px }
@@ -106,7 +111,7 @@ section { display: flex; flex-direction: column; gap: 10px }
 .filters::-webkit-scrollbar { display: none }
 .filters button { flex: none; padding: 6px 12px; border-radius: 99px; background: var(--surface); border: 1px solid var(--line); font-size: 13px; font-weight: 500 }
 .filters button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg) }
-.totals { display: grid; grid-template-columns: 1fr 1fr; gap: 8px }
+.totals { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px }
 .totals div { background: var(--surface); border-radius: 14px; padding: 12px 14px }
 .totals .num { font-size: 20px; font-weight: 700; display: block }
 .empty { text-align: center; color: var(--muted); padding: 28px 16px; background: var(--surface); border-radius: var(--r) }
@@ -207,12 +212,12 @@ textarea.csv { width: 100%; height: 110px; font: 12px/1.4 ui-monospace, monospac
 .suggest { display: flex; flex-wrap: wrap; gap: 8px }
 .suggest button { padding: 7px 12px; border-radius: 99px; background: var(--surface); border: 1px dashed var(--line); font-size: 13.5px; font-weight: 500 }
 .suggest button:hover { border-color: var(--accent); color: var(--accent) }
-.setup-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px }
+.setup-row { display: flex; align-items: center; gap: 6px; padding: 10px 8px 10px 12px }
 .setup-row + .setup-row { border-top: 1px solid var(--line) }
 .setup-row input { min-width: 0; background: transparent; border: 1.5px solid transparent; border-radius: 10px; padding: 7px 8px; outline: 0 }
 .setup-row input:focus { border-color: var(--accent); background: var(--surface-2) }
 .setup-row .nm { flex: 1; font-weight: 500 }
-.setup-row .lim { width: 104px; text-align: right; font-family: var(--display); font-weight: 600; background: var(--surface-2) }
+.setup-row .lim { width: 80px; text-align: right; font-family: var(--display); font-weight: 600; background: var(--surface-2) }
 .setup-row .x { width: 30px; height: 30px; border-radius: 10px; color: var(--muted); font-size: 18px; flex: none }
 .setup-row .x:hover { background: var(--surface-2); color: var(--bad) }
 .setup-row .dot { cursor: pointer }
@@ -258,6 +263,7 @@ textarea.csv { width: 100%; height: 110px; font: 12px/1.4 ui-monospace, monospac
         <div><span class="label">Income</span><span class="num" id="statIn">$0</span></div>
         <div><span class="label">Spent</span><span class="num" id="statOut">$0</span></div>
         <div><span class="label">Saved</span><span class="num" id="statNet">$0</span></div>
+        <div><span class="label">Left over</span><span class="num" id="statLeft">$0</span></div>
       </div>
     </div>
 
@@ -277,6 +283,11 @@ textarea.csv { width: 100%; height: 110px; font: 12px/1.4 ui-monospace, monospac
       <div class="list" id="catList"></div>
     </section>
 
+    <section id="saveSec" hidden>
+      <div class="sec-head"><h2>Savings &amp; investments</h2><span class="small num" id="saveTotal"></span></div>
+      <div class="list" id="saveList"></div>
+    </section>
+
     <section>
       <div class="sec-head"><h2>Recent</h2><button class="link" data-go="activity">See all</button></div>
       <div class="list" id="recentList"></div>
@@ -287,7 +298,8 @@ textarea.csv { width: 100%; height: 110px; font: 12px/1.4 ui-monospace, monospac
   <div class="view" id="view-activity" hidden>
     <div class="totals">
       <div><span class="label">In</span><span class="num amt in" id="actIn">$0</span></div>
-      <div><span class="label">Out</span><span class="num" id="actOut">$0</span></div>
+      <div><span class="label">Spent</span><span class="num" id="actOut">$0</span></div>
+      <div><span class="label">Saved</span><span class="num amt save" id="actSaved">$0</span></div>
     </div>
     <div class="search"><input id="search" type="search" placeholder="Search notes, categories, amounts" aria-label="Search"></div>
     <div class="filters" id="filters"></div>
@@ -383,7 +395,10 @@ textarea.csv { width: 100%; height: 110px; font: 12px/1.4 ui-monospace, monospac
   <h3 id="catSheetTitle">New category</h3>
   <form class="cat-form" id="catForm" autocomplete="off">
     <label class="field"><span class="label">Name</span><input class="note" id="catName" placeholder="e.g. Groceries" maxlength="24" required></label>
-    <label class="field"><span class="label">Monthly limit</span>
+    <div class="field"><span class="label">Type</span>
+      <div class="seg" id="catKind" role="group" aria-label="Category type"><button type="button" data-kind="spend">Spending</button><button type="button" data-kind="save">Savings / investing</button></div>
+      <span class="small" id="catKindNote"></span></div>
+    <label class="field"><span class="label" id="catLimitLabel">Monthly limit</span>
       <span class="money-input"><span class="num" id="catCur">$</span><input class="note num" id="catLimit" inputmode="decimal" placeholder="No limit"></span></label>
     <div class="field"><span class="label">Colour</span><div class="swatches" id="catSwatches" role="group" aria-label="Category colour"></div></div>
     <div class="actions">
@@ -398,7 +413,7 @@ textarea.csv { width: 100%; height: 110px; font: 12px/1.4 ui-monospace, monospac
 <div class="setup" id="setupScreen" hidden>
   <div class="setup-card">
     <h2>Set up your budget</h2>
-    <p class="small">Add the things you spend money on and a monthly limit for each. You can add more or change limits any time.</p>
+    <p class="small">Add what you spend money on, plus any savings or investments, with a monthly limit or target for each. Savings don't count as spending. You can change everything later.</p>
     <div class="settings-row" style="border:0;padding:0"><span>Currency</span><select id="setupCurrency" aria-label="Currency"></select></div>
     <div class="label">Tap to add</div>
     <div class="suggest" id="suggest"></div>
@@ -459,7 +474,7 @@ const ACCENTS = {
 };
 const INCOME = { id: 'income', name: 'Income', color: '#11865a' };
 const NONE = { id: 'none', name: 'Uncategorised', color: '#7a8194' };
-const SUGGESTIONS = ['Groceries', 'Eating out', 'Rent', 'Bills', 'Transport', 'Shopping', 'Fun', 'Health', 'Subscriptions', 'Travel', 'Gym', 'Gifts'];
+const SUGGESTIONS = ['Groceries', 'Eating out', 'Rent', 'Bills', 'Transport', 'Shopping', 'Fun', 'Health', 'Subscriptions', 'Travel', 'Gym', 'Gifts', 'Savings', 'Investments'];
 
 // Words that hint at a category. A group applies to any category whose name contains one of its aliases.
 const KEYWORD_GROUPS = [
@@ -472,6 +487,7 @@ const KEYWORD_GROUPS = [
   { alias: ['health', 'medical', 'gym', 'fitness', 'pharmacy'], words: 'pharmacy doctor medicine meds gym dentist hospital clinic vitamins' },
   { alias: ['subscri', 'stream', 'apps'], words: 'netflix spotify prime youtube disney icloud subscription hbo chatgpt claude' },
   { alias: ['gift'], words: 'gift gifts birthday present' },
+  { alias: ['sav', 'invest', 'pension', 'stock', 'share', 'crypto', 'isa', 'sip', 'retire', 'emergency'], words: 'savings save saving invest investment investments stocks shares etf crypto bitcoin pension isa sip mutual fund vanguard trading 401k roth' },
 ];
 const INCOME_WORDS = 'salary paycheck payroll wage wages freelance invoice refund cashback income bonus'.split(' ');
 const CURRENCIES = { USD: '$', EUR: '€', GBP: '£', INR: '₹', CAD: '$', AUD: '$', JPY: '¥', SGD: '$', AED: 'AED ' };
@@ -573,7 +589,15 @@ function periodFor(offset) {
 }
 const inPeriod = (t, p) => { const d = parseISO(t.date); return d >= p.start && d < p.end; };
 const txIn = p => S.txns.filter(t => inPeriod(t, p));
-const totalBudget = () => S.cats.reduce((a, c) => a + (+c.limit || 0), 0);
+// Savings and investments categories move money aside; they are not spending
+const isSaveCat = c => !!c && c.kind === 'save';
+const isSave = t => t.type === 'out' && isSaveCat(catById(t.cat));
+const isSpend = t => t.type === 'out' && !isSave(t);
+const sum = list => list.reduce((a, t) => a + t.amt, 0);
+const spendCats = () => S.cats.filter(c => !isSaveCat(c));
+const saveCats = () => S.cats.filter(isSaveCat);
+const totalBudget = () => spendCats().reduce((a, c) => a + (+c.limit || 0), 0);
+const SAVE_HINT = /sav|invest|pension|retire|stock|share|crypto|\bisa\b|\bsip\b|\bfd\b|emergency fund|mutual fund|etf|401k|roth/i;
 
 // ---------- render ----------
 let tab = 'home';
@@ -593,8 +617,9 @@ function render() {
 
 function renderHome(p) {
   const tx = txIn(p);
-  const out = tx.filter(t => t.type === 'out').reduce((a, t) => a + t.amt, 0);
-  const inc = tx.filter(t => t.type === 'in').reduce((a, t) => a + t.amt, 0);
+  const out = sum(tx.filter(isSpend));
+  const saved = sum(tx.filter(isSave));
+  const inc = sum(tx.filter(t => t.type === 'in'));
   const budget = totalBudget();
   const left = budget - out;
   const now = new Date();
@@ -629,8 +654,11 @@ function renderHome(p) {
   $('#budgetLine').textContent = money(budget, { round: true });
   $('#statIn').textContent = money(inc, { round: true });
   $('#statOut').textContent = money(out, { round: true });
-  $('#statNet').textContent = money(inc - out, { round: true });
-  $('#statNet').style.color = inc - out < 0 ? 'var(--bad)' : 'var(--good)';
+  // Saved = money moved into savings/investments; Left over = income not spent or saved
+  $('#statNet').textContent = money(saved, { round: true });
+  $('#statNet').style.color = saved > 0 ? 'var(--good)' : '';
+  $('#statLeft').textContent = money(inc - out - saved, { round: true });
+  $('#statLeft').style.color = inc - out - saved < 0 ? 'var(--bad)' : '';
 
   // repeat chips: most frequent note+cat combos from last 60 days
   const since = Date.now() - 60 * 864e5; const freq = {};
@@ -644,7 +672,7 @@ function renderHome(p) {
 
   // categories
   const byCat = {}; tx.filter(t => t.type === 'out').forEach(t => byCat[t.cat] = (byCat[t.cat] || 0) + t.amt);
-  const rows = [...S.cats, ...(byCat.none ? [NONE] : [])].sort((a, b) => (byCat[b.id] || 0) - (byCat[a.id] || 0) || (+b.limit || 0) - (+a.limit || 0));
+  const rows = [...spendCats(), ...(byCat.none ? [NONE] : [])].sort((a, b) => (byCat[b.id] || 0) - (byCat[a.id] || 0) || (+b.limit || 0) - (+a.limit || 0));
   $('#catList').innerHTML = S.cats.length ? rows.map(c => {
     const sp = byCat[c.id] || 0, b = +c.limit || 0; const over = b && sp > b;
     const w = b ? Math.min(100, sp / b * 100) : (out ? sp / out * 100 : 0);
@@ -653,6 +681,17 @@ function renderHome(p) {
       <div class="right"><span class="amt num">${money(sp, { round: true })}</span><span class="sub ${over ? 'over' : ''}">${b ? (over ? money(sp - b, { round: true }) + ' over' : money(b - sp, { round: true }) + ' left') : 'no limit'}</span></div></button>`;
   }).join('') : `<div class="prompt-card"><strong>Make your first category</strong><span class="small">Group your spending, like Groceries or Rent, and give each one a monthly limit.</span><button class="btn" data-act="setup">Set up categories</button></div>`;
   $('#catList').classList.toggle('list', S.cats.length > 0);
+
+  // savings & investments: progress towards each monthly target
+  const sc = saveCats();
+  $('#saveSec').hidden = !sc.length;
+  $('#saveTotal').textContent = sc.length ? money(saved, { round: true }) + ' put aside' : '';
+  $('#saveList').innerHTML = sc.map(c => {
+    const v = byCat[c.id] || 0, g = +c.limit || 0; const w = g ? Math.min(100, v / g * 100) : 0;
+    return `<button class="row cat-row" data-filter="${c.id}">${dot(c)}<div class="main"><span class="title">${esc(c.name)}</span>
+      ${g ? `<div class="bar"><i style="width:${w}%;background:${c.color}"></i></div>` : ''}</div>
+      <div class="right"><span class="amt num">${money(v, { round: true })}</span><span class="sub ${g && v >= g ? 'done' : ''}">${g ? (v >= g ? 'Target reached' : money(g - v, { round: true }) + ' to go') : 'no target'}</span></div></button>`;
+  }).join('');
 
   const recent = [...tx].sort(byNewest).slice(0, 5);
   $('#recentList').innerHTML = recent.length ? recent.map(txRow).join('') : '<div class="empty">No transactions yet. Tap + or type one above.</div>';
@@ -672,7 +711,7 @@ function relDay(dateStr) {
 function txRow(t) {
   const c = catById(t.cat);
   return `<button class="row" data-edit="${t.id}">${dot(c)}<div class="main"><span class="title">${esc(t.note || c.name)}</span><span class="sub">${esc(c.name)} · ${relDay(t.date)}</span></div>
-    <span class="amt num ${t.type === 'in' ? 'in' : ''}">${t.type === 'in' ? '+' : ''}${money(t.amt)}</span></button>`;
+    <span class="amt num ${t.type === 'in' ? 'in' : isSave(t) ? 'save' : ''}">${t.type === 'in' ? '+' : ''}${money(t.amt)}</span></button>`;
 }
 
 let filterCat = null;
@@ -680,7 +719,8 @@ function renderActivity(p) {
   const q = $('#search').value.trim().toLowerCase();
   let tx = txIn(p);
   $('#actIn').textContent = '+' + money(tx.filter(t => t.type === 'in').reduce((a, t) => a + t.amt, 0), { round: true });
-  $('#actOut').textContent = money(tx.filter(t => t.type === 'out').reduce((a, t) => a + t.amt, 0), { round: true });
+  $('#actOut').textContent = money(sum(tx.filter(isSpend)), { round: true });
+  $('#actSaved').textContent = money(sum(tx.filter(isSave)), { round: true });
   const used = [...new Set(tx.map(t => t.cat))];
   const filterCats = [...S.cats.filter(c => used.includes(c.id)), ...['none', 'income'].filter(id => used.includes(id)).map(catById)];
   $('#filters').innerHTML = `<button data-f="" aria-pressed="${!filterCat}">All</button>` +
@@ -690,8 +730,8 @@ function renderActivity(p) {
   tx.sort(byNewest);
   const groups = {}; tx.forEach(t => (groups[t.date] ||= []).push(t));
   $('#activityList').innerHTML = Object.keys(groups).length ? Object.entries(groups).map(([d, list]) => {
-    const net = list.reduce((a, t) => a + (t.type === 'in' ? t.amt : -t.amt), 0);
-    return `<div class="day-head"><span>${relDay(d)}</span><span class="num">${net > 0 ? '+' : ''}${money(net)}</span></div><div class="list">${list.map(txRow).join('')}</div>`;
+    const spent = sum(list.filter(isSpend));
+    return `<div class="day-head"><span>${relDay(d)}</span><span class="num">${spent ? money(spent) + ' spent' : ''}</span></div><div class="list">${list.map(txRow).join('')}</div>`;
   }).join('') : `<div class="empty">${q || filterCat ? 'No matches this month.' : 'No transactions this month.'}</div>`;
 }
 
@@ -699,7 +739,7 @@ function renderPlan() {
   const cols = [];
   for (let o = -5; o <= 0; o++) {
     const p = periodFor(o + viewOffset);
-    cols.push({ p, o, v: txIn(p).filter(t => t.type === 'out').reduce((a, t) => a + t.amt, 0) });
+    cols.push({ p, o, v: sum(txIn(p).filter(isSpend)) });
   }
   const max = Math.max(1, ...cols.map(c => c.v), totalBudget());
   $('#chart').innerHTML = cols.map(c => `<div class="col ${c.o === 0 ? 'cur' : ''}"><span class="v num">${compact(c.v)}</span><div class="bar" style="height:${c.v / max * 100}%"></div><span class="m">${c.p.short}</span></div>`).join('');
@@ -709,15 +749,18 @@ function renderPlan() {
   const catAvg = {}, catCur = {};
   for (let o = -5; o < 0; o++) txIn(periodFor(o + viewOffset)).filter(t => t.type === 'out').forEach(t => catAvg[t.cat] = (catAvg[t.cat] || 0) + t.amt / 5);
   txIn(cur.p).filter(t => t.type === 'out').forEach(t => catCur[t.cat] = (catCur[t.cat] || 0) + t.amt);
-  const topCat = Object.entries(catCur).sort((a, b) => b[1] - a[1])[0];
+  const topCat = Object.entries(catCur).filter(([id]) => !isSaveCat(catById(id))).sort((a, b) => b[1] - a[1])[0];
   let txt = avg ? `You usually spend <strong class="num">${money(avg, { round: true })}</strong> a month. ` : '';
   if (topCat) txt += `Your biggest category in ${cur.p.label.split(' ')[0]} is <strong>${esc(catById(topCat[0]).name)}</strong> at <strong class="num">${money(topCat[1], { round: true })}</strong>${catAvg[topCat[0]] ? `, against a typical <span class="num">${money(catAvg[topCat[0]], { round: true })}</span>` : ''}.`;
   $('#insight').innerHTML = txt || 'Add a few transactions and patterns will show up here.';
 
   $('#budgetTotal').textContent = totalBudget() ? money(totalBudget(), { round: true }) + ' / month' : '';
-  $('#budgetList').innerHTML = S.cats.map(c => `<button class="row" data-editcat="${c.id}">${dot(c)}<div class="main"><span class="title">${esc(c.name)}</span>
-    <span class="sub">${money(catCur[c.id] || 0, { round: true })} this month${catAvg[c.id] ? ` · avg ${money(catAvg[c.id], { round: true })}` : ''}</span></div>
-    <span class="amt num" style="${+c.limit ? '' : 'color:var(--muted);font-weight:500'}">${+c.limit ? money(+c.limit, { auto: true }) : 'No limit'}</span></button>`).join('') +
+  const planRow = c => `<button class="row" data-editcat="${c.id}">${dot(c)}<div class="main"><span class="title">${esc(c.name)}</span>
+    <span class="sub">${money(catCur[c.id] || 0, { round: true })} ${isSaveCat(c) ? 'put aside' : 'spent'} this month${catAvg[c.id] ? ` · avg ${money(catAvg[c.id], { round: true })}` : ''}</span></div>
+    <span class="amt num" style="${+c.limit ? '' : 'color:var(--muted);font-weight:500'}">${+c.limit ? money(+c.limit, { auto: true }) : (isSaveCat(c) ? 'No target' : 'No limit')}</span></button>`;
+  const sc = saveCats();
+  $('#budgetList').innerHTML = spendCats().map(planRow).join('') +
+    (sc.length ? `<div class="list-label">Savings &amp; investments</div>` + sc.map(planRow).join('') : '') +
     `<button class="row add-row" data-act="newcat"><span class="dot">+</span><div class="main"><span class="title">Add a category</span></div></button>`;
 }
 const compact = v => { if (!v) return '–'; const s = sym().trim(); if (v >= 1e5) return s + (v / 1e5 >= 10 ? Math.round(v / 1e5) : (v / 1e5).toFixed(1)) + (S.currency === 'INR' ? 'L' : '00k'); if (v >= 1000) return s + (v / 1000).toFixed(v >= 1e4 ? 0 : 1) + 'k'; return s + Math.round(v); };
@@ -735,20 +778,21 @@ function renderSetup() {
   $('#setupList').hidden = !setupDraft.length;
   $('#setupList').innerHTML = setupDraft.map((c, i) => `<div class="setup-row">${dot(c, 0, `data-cycle="${i}" role="button" tabindex="0" aria-label="Change colour"`)}
     <input class="nm" data-sname="${i}" value="${esc(c.name)}" maxlength="24" aria-label="Category name">
-    <input class="lim num" data-slimit="${i}" value="${+c.limit || ''}" placeholder="${esc(sym().trim())} limit" inputmode="decimal" aria-label="${esc(c.name)} monthly limit">
+    <button type="button" class="kind ${isSaveCat(c) ? 'on' : ''}" data-skind="${i}" aria-pressed="${isSaveCat(c)}" title="Savings or investments don't count as spending">${isSaveCat(c) ? 'Saving' : 'Spend'}</button>
+    <input class="lim num" data-slimit="${i}" value="${+c.limit || ''}" placeholder="${esc(sym().trim())} ${isSaveCat(c) ? 'target' : 'limit'}" inputmode="decimal" aria-label="${esc(c.name)} monthly ${isSaveCat(c) ? 'target' : 'limit'}">
     <button type="button" class="x" data-sremove="${i}" aria-label="Remove ${esc(c.name)}">×</button></div>`).join('');
   updateSetupTotal();
 }
 function updateSetupTotal() {
-  const tot = setupDraft.reduce((a, c) => a + (+c.limit || 0), 0);
-  $('#setupTotal').innerHTML = setupDraft.length ? `${setupDraft.length} categor${setupDraft.length === 1 ? 'y' : 'ies'} · monthly total <strong class="num">${money(tot, { round: true })}</strong>` : '';
+  const tot = setupDraft.filter(c => !isSaveCat(c)).reduce((a, c) => a + (+c.limit || 0), 0);
+  $('#setupTotal').innerHTML = setupDraft.length ? `${setupDraft.length} categor${setupDraft.length === 1 ? 'y' : 'ies'} · spending limit <strong class="num">${money(tot, { round: true })}</strong>` : '';
   $('#setupDone').disabled = !setupDraft.length; $('#setupDone').style.opacity = setupDraft.length ? '' : '.45';
 }
 function addDraftCat(name, limit, focusLimit) {
   name = name.trim(); if (!name) return;
   if (setupDraft.some(c => c.name.toLowerCase() === name.toLowerCase())) return;
   const used = new Set(setupDraft.map(c => c.color));
-  setupDraft.push({ id: uid(), name, color: CAT_COLORS.find(c => !used.has(c)) || CAT_COLORS[setupDraft.length % 16], limit: parseAmt(limit) });
+  setupDraft.push({ id: uid(), name, color: CAT_COLORS.find(c => !used.has(c)) || CAT_COLORS[setupDraft.length % 16], limit: parseAmt(limit), kind: SAVE_HINT.test(name) ? 'save' : 'spend' });
   renderSetup();
   if (focusLimit) { const el = $(`[data-slimit="${setupDraft.length - 1}"]`); if (el) el.focus(); }
 }
@@ -757,7 +801,7 @@ function finishSetup() {
   // categories removed during setup: their transactions become uncategorised
   const keep = new Set(setupDraft.map(c => c.id));
   S.txns.forEach(t => { if (t.type === 'out' && !keep.has(t.cat) && t.cat !== 'none') t.cat = 'none'; });
-  S.cats = setupDraft.map(c => ({ id: c.id, name: c.name.trim(), color: c.color, limit: +c.limit || 0 }));
+  S.cats = setupDraft.map(c => ({ id: c.id, name: c.name.trim(), color: c.color, limit: +c.limit || 0, kind: c.kind === 'save' ? 'save' : 'spend' }));
   S.setupDone = true; save(); $('#setupScreen').hidden = true; tab = 'home'; render();
   toast(S.cats.length ? `Budget ready with ${S.cats.length} categor${S.cats.length === 1 ? 'y' : 'ies'}` : 'You can add categories any time from Plan');
 }
@@ -766,12 +810,19 @@ function finishSetup() {
 let catEdit = null; // { id|null, color, returnToAdd }
 function openCatEditor(id, returnToAdd) {
   const c = id ? S.cats.find(x => x.id === id) : null;
-  catEdit = { id: c ? c.id : null, color: c ? c.color : nextColor(), returnToAdd: !!returnToAdd, armed: false };
+  catEdit = { id: c ? c.id : null, color: c ? c.color : nextColor(), kind: c && c.kind === 'save' ? 'save' : 'spend', returnToAdd: !!returnToAdd, armed: false };
   $('#catSheetTitle').textContent = c ? 'Edit category' : 'New category';
   $('#catName').value = c ? c.name : ''; $('#catLimit').value = c && +c.limit ? c.limit : ''; $('#catCur').textContent = sym().trim();
   $('#catDelete').hidden = !c; $('#catDeleteNote').hidden = true; $('#catSave').textContent = c ? 'Save' : 'Add category';
-  renderCatSwatches(); openSheet('#catSheet', true);
+  renderCatSwatches(); renderCatKind(); openSheet('#catSheet', true);
   setTimeout(() => { if (!c) $('#catName').focus(); }, 300);
+}
+function renderCatKind() {
+  $$('#catKind button').forEach(b => b.setAttribute('aria-pressed', b.dataset.kind === catEdit.kind));
+  const save = catEdit.kind === 'save';
+  $('#catLimitLabel').textContent = save ? 'Monthly target' : 'Monthly limit';
+  $('#catLimit').placeholder = save ? 'No target' : 'No limit';
+  $('#catKindNote').textContent = save ? 'Money you put here counts as saved, not spent.' : 'Counts towards your spending.';
 }
 function renderCatSwatches() { $('#catSwatches').innerHTML = swatchHTML(CAT_COLORS.map(c => [c, c]), catEdit.color, 'data-catcolor'); }
 function saveCat() {
@@ -780,8 +831,8 @@ function saveCat() {
   if (dup) { $('#catDeleteNote').hidden = false; $('#catDeleteNote').textContent = `You already have a category called ${dup.name}.`; return; }
   const limit = parseAmt($('#catLimit').value);
   let id = catEdit.id;
-  if (id) Object.assign(S.cats.find(c => c.id === id), { name, limit, color: catEdit.color });
-  else { id = uid(); S.cats.push({ id, name, color: catEdit.color, limit }); }
+  if (id) Object.assign(S.cats.find(c => c.id === id), { name, limit, color: catEdit.color, kind: catEdit.kind });
+  else { id = uid(); S.cats.push({ id, name, color: catEdit.color, limit, kind: catEdit.kind }); }
   S.setupDone = true; save();
   const back = catEdit.returnToAdd; const isNew = !catEdit.id; catEdit = null;
   if (back && draft) { reopenAdd(); draft.cat = id; syncSheet(); if (isNew && +draft.amtStr > 0 && !draft.editing) saveDraft(id); }
@@ -980,6 +1031,8 @@ document.addEventListener('click', e => {
   if (el.dataset.act === 'newcat') return openCatEditor(null);
   if (el.dataset.act === 'newcat-add') return openCatEditor(null, true);
   if (el.dataset.editcat) return openCatEditor(el.dataset.editcat);
+  if (el.dataset.kind && catEdit) { catEdit.kind = el.dataset.kind; return renderCatKind(); }
+  if (el.dataset.skind !== undefined) { const c = setupDraft[+el.dataset.skind]; c.kind = isSaveCat(c) ? 'spend' : 'save'; return renderSetup(); }
   if (el.dataset.catcolor) { catEdit.color = el.dataset.catcolor; return renderCatSwatches(); }
   if (el.dataset.accent) { S.accent = el.dataset.accent; save(); applyAppearance(); return renderAppearanceControls(); }
   if (el.dataset.themeOpt) { S.theme = el.dataset.themeOpt; save(); applyAppearance(); return renderAppearanceControls(); }
@@ -1016,6 +1069,8 @@ $('#setupCurrency').addEventListener('change', e => { S.currency = e.target.valu
 $('#setupDone').addEventListener('click', () => { const pending = $('#setupName').value.trim(); if (pending) { addDraftCat(pending, $('#setupLimit').value); $('#setupName').value = ''; $('#setupLimit').value = ''; } if (setupDraft.length) finishSetup(); });
 $('#setupSkip').addEventListener('click', () => { S.setupDone = true; save(); $('#setupScreen').hidden = true; render(); });
 $('#catForm').addEventListener('submit', e => { e.preventDefault(); saveCat(); });
+$('#catName').addEventListener('input', e => { if (catEdit && !catEdit.id && !catEdit.kindTouched) { catEdit.kind = SAVE_HINT.test(e.target.value) ? 'save' : 'spend'; renderCatKind(); } });
+$('#catKind').addEventListener('click', () => { if (catEdit) catEdit.kindTouched = true; });
 $('#catDelete').addEventListener('click', deleteCat);
 $('#manageCats').addEventListener('click', () => { closeSheets(); go('plan'); });
 $('#scrim').addEventListener('click', () => { if (catEdit && catEdit.returnToAdd && draft) { catEdit = null; reopenAdd(); } else closeSheets(); });
