@@ -66,7 +66,7 @@
       }
       if (meta.settings) {
         const v = meta.settings; const st = Ledger.state();
-        const { data, error } = await sb.from('settings').upsert({ user_id: user.id, currency: st.currency, start_day: st.startDay || 1, budgets: st.budgets || {} }).select().single();
+        const { data, error } = await sb.from('settings').upsert({ user_id: user.id, currency: st.currency, start_day: st.startDay || 1, budgets: Ledger.prefs() }).select().single();
         if (error) throw error;
         meta.settingsAt = data.updated_at; if (meta.settings === v) meta.settings = 0;
       }

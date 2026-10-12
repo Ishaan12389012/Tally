@@ -207,6 +207,42 @@ textarea.csv { width: 100%; height: 110px; font: 12px/1.4 ui-monospace, monospac
 .auth-msg.ok { color: var(--good) }
 .link.muted { color: var(--muted); font-weight: 500 }
 .view { display: flex; flex-direction: column; gap: 18px }
+.seg.mini { width: auto; grid-template-columns: repeat(3, auto) } .seg.mini button { padding: 6px 12px; font-size: 13px }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--fg) }
+.settings-row.col { flex-direction: column; align-items: stretch }
+.swatches { display: flex; flex-wrap: wrap; gap: 10px }
+.swatch { width: 34px; height: 34px; border-radius: 50%; border: 3px solid var(--surface); box-shadow: 0 0 0 1.5px var(--line); position: relative }
+.swatch[aria-pressed="true"] { box-shadow: 0 0 0 2.5px var(--fg) }
+.swatch[aria-pressed="true"]::after { content: ""; position: absolute; inset: 9px 8px 11px; border: solid #fff; border-width: 0 0 2.5px 2.5px; transform: rotate(-45deg) }
+.cat-form { display: flex; flex-direction: column; gap: 14px }
+.field { display: flex; flex-direction: column; gap: 6px }
+.money-input { display: flex; align-items: center; gap: 8px; color: var(--muted); font-weight: 600 }
+.money-input input { flex: 1 }
+.setup { position: fixed; inset: 0; z-index: 35; background: var(--bg); overflow-y: auto; padding: calc(28px + env(safe-area-inset-top, 0px)) 16px calc(28px + env(safe-area-inset-bottom, 0px)) }
+.setup-card { max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px }
+.setup-card h2 { margin: 0; font: 700 30px/1.1 var(--display); letter-spacing: -.02em; text-wrap: balance }
+.setup-card p { margin: 0 }
+.suggest { display: flex; flex-wrap: wrap; gap: 8px }
+.suggest button { padding: 7px 12px; border-radius: 99px; background: var(--surface); border: 1px dashed var(--line); font-size: 13.5px; font-weight: 500 }
+.suggest button:hover { border-color: var(--accent); color: var(--accent) }
+.setup-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px }
+.setup-row + .setup-row { border-top: 1px solid var(--line) }
+.setup-row input { min-width: 0; background: transparent; border: 1.5px solid transparent; border-radius: 10px; padding: 7px 8px; outline: 0 }
+.setup-row input:focus { border-color: var(--accent); background: var(--surface-2) }
+.setup-row .nm { flex: 1; font-weight: 500 }
+.setup-row .lim { width: 104px; text-align: right; font-family: var(--display); font-weight: 600; background: var(--surface-2) }
+.setup-row .x { width: 30px; height: 30px; border-radius: 10px; color: var(--muted); font-size: 18px; flex: none }
+.setup-row .x:hover { background: var(--surface-2); color: var(--bad) }
+.setup-row .dot { cursor: pointer }
+.setup-add { display: flex; gap: 8px }
+.setup-add .note { min-width: 0 } .setup-add #setupName { flex: 1.6 } .setup-add #setupLimit { flex: 1 }
+.setup-total { font-size: 14px; color: var(--muted); text-align: right }
+.setup-total strong { color: var(--fg) }
+.prompt-card { background: var(--accent-soft); border-radius: var(--r); padding: 16px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start }
+.prompt-card strong { font: 700 17px/1.2 var(--display) }
+.prompt-card .btn { flex: none; padding: 10px 16px }
+.add-row { color: var(--accent); font-weight: 600 }
+.add-row .dot { background: var(--accent-soft); color: var(--accent); font-size: 18px }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important } }
 </style>
 
@@ -223,11 +259,6 @@ textarea.csv { width: 100%; height: 110px; font: 12px/1.4 ui-monospace, monospac
     <button class="icon-btn" id="openSettings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button></div>
   </header>
 
-  <div class="banner" id="sampleBanner" hidden>
-    <span>You're looking at example data so you can try things out.</span>
-    <button id="clearSample">Start fresh</button>
-  </div>
-
   <!-- HOME -->
   <div class="view" id="view-home">
     <div class="hero">
@@ -238,9 +269,9 @@ textarea.csv { width: 100%; height: 110px; font: 12px/1.4 ui-monospace, monospac
         </div>
         <span class="pill good" id="pacePill">On track</span>
       </div>
-      <div class="meter" aria-hidden="true"><i id="meterFill"></i><b id="meterToday"></b></div>
+      <div class="meter" aria-hidden="true" id="budgetWrap"><i id="meterFill"></i><b id="meterToday"></b></div>
       <div class="hero-foot">
-        <span><strong class="num" id="spentLine">$0</strong> spent of <span class="num" id="budgetLine">$0</span></span>
+        <span id="spentOf"><strong class="num" id="spentLine">$0</strong> spent of <span class="num" id="budgetLine">$0</span></span>
         <span id="perDay"></span>
       </div>
       <div class="stats">
@@ -254,7 +285,7 @@ textarea.csv { width: 100%; height: 110px; font: 12px/1.4 ui-monospace, monospac
       <input id="quickInput" placeholder="Type “12.50 lunch” and hit enter" inputmode="text" aria-label="Quick add">
       <button type="submit">Add</button>
     </form>
-    <div class="quick-hint" id="quickHint">Try “+2500 salary”, “40 uber yesterday” or “groceries 63”.</div>
+    <div class="quick-hint" id="quickHint">Try “+2500 salary”, “40 uber yesterday” or “63 groceries”.</div>
 
     <section id="repeatSec">
       <div class="sec-head"><h2>Log again</h2><span class="small">One tap, done</span></div>
@@ -262,7 +293,7 @@ textarea.csv { width: 100%; height: 110px; font: 12px/1.4 ui-monospace, monospac
     </section>
 
     <section>
-      <div class="sec-head"><h2>Where it's going</h2><button class="link" data-go="plan">Edit budgets</button></div>
+      <div class="sec-head"><h2>Where it's going</h2><button class="link" data-go="plan">Edit limits</button></div>
       <div class="list" id="catList"></div>
     </section>
 
@@ -291,9 +322,9 @@ textarea.csv { width: 100%; height: 110px; font: 12px/1.4 ui-monospace, monospac
       <div class="insight" id="insight"></div>
     </section>
     <section>
-      <div class="sec-head"><h2>Monthly budgets</h2><span class="small num" id="budgetTotal"></span></div>
+      <div class="sec-head"><h2>Categories &amp; limits</h2><span class="small num" id="budgetTotal"></span></div>
       <div class="list" id="budgetList"></div>
-      <div class="small">Budgets repeat every month. Leave a category at 0 to track it without a limit.</div>
+      <div class="small">Limits repeat every month. Tap a category to rename it, change its colour or change its limit.</div>
     </section>
   </div>
 </div>
@@ -343,6 +374,11 @@ textarea.csv { width: 100%; height: 110px; font: 12px/1.4 ui-monospace, monospac
   <div class="grab"></div>
   <h3>Settings</h3>
   <div class="settings-row" id="accountRow" hidden></div>
+  <div class="settings-row"><span>Theme</span>
+    <div class="seg mini" role="group" aria-label="Theme" id="themeSeg"><button data-theme-opt="system">Auto</button><button data-theme-opt="light">Light</button><button data-theme-opt="dark">Dark</button></div>
+  </div>
+  <div class="settings-row col"><span>App colour</span><div class="swatches" id="accentSwatches" role="group" aria-label="App colour"></div></div>
+  <div class="settings-row"><span>Categories &amp; limits</span><button class="btn ghost" style="flex:0 0 auto" id="manageCats">Edit</button></div>
   <div class="settings-row"><span>Currency</span>
     <select id="currencySel">
       <option value="USD">$ US dollar</option><option value="EUR">€ Euro</option><option value="GBP">£ British pound</option>
@@ -359,6 +395,43 @@ textarea.csv { width: 100%; height: 110px; font: 12px/1.4 ui-monospace, monospac
   <div class="settings-row"><span>Erase all data</span><button class="btn danger" id="eraseBtn">Erase</button></div>
   <div class="small" id="eraseConfirm" hidden>Tap Erase again to delete every transaction and budget. If you're signed in, this clears your other devices too.</div>
   <button class="btn ghost" data-close>Done</button>
+</div>
+
+<!-- CATEGORY SHEET -->
+<div class="sheet" id="catSheet" role="dialog" aria-label="Category">
+  <div class="grab"></div>
+  <h3 id="catSheetTitle">New category</h3>
+  <form class="cat-form" id="catForm" autocomplete="off">
+    <label class="field"><span class="label">Name</span><input class="note" id="catName" placeholder="e.g. Groceries" maxlength="24" required></label>
+    <label class="field"><span class="label">Monthly limit</span>
+      <span class="money-input"><span class="num" id="catCur">$</span><input class="note num" id="catLimit" inputmode="decimal" placeholder="No limit"></span></label>
+    <div class="field"><span class="label">Colour</span><div class="swatches" id="catSwatches" role="group" aria-label="Category colour"></div></div>
+    <div class="actions">
+      <button class="btn danger" type="button" id="catDelete">Delete</button>
+      <button class="btn" type="submit" id="catSave">Save</button>
+    </div>
+    <div class="small" id="catDeleteNote" hidden></div>
+  </form>
+</div>
+
+<!-- FIRST-RUN SETUP -->
+<div class="setup" id="setupScreen" hidden>
+  <div class="setup-card">
+    <h2>Set up your budget</h2>
+    <p class="small">Add the things you spend money on and a monthly limit for each. You can add more or change limits any time.</p>
+    <div class="settings-row" style="border:0;padding:0"><span>Currency</span><select id="setupCurrency" aria-label="Currency"></select></div>
+    <div class="label">Tap to add</div>
+    <div class="suggest" id="suggest"></div>
+    <div class="list" id="setupList"></div>
+    <form class="setup-add" id="setupAdd" autocomplete="off">
+      <input class="note" id="setupName" placeholder="Your own category" maxlength="24" aria-label="Category name">
+      <input class="note num" id="setupLimit" placeholder="Limit" inputmode="decimal" aria-label="Monthly limit">
+      <button class="btn" type="submit" style="flex:0 0 auto">Add</button>
+    </form>
+    <div class="setup-total" id="setupTotal"></div>
+    <button class="btn" id="setupDone" type="button">Start tracking</button>
+    <button class="link muted" id="setupSkip" type="button">Skip for now</button>
+  </div>
 </div>
 
 <!-- EXPORT SHEET -->
@@ -396,37 +469,32 @@ const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const KEY = 'pocket-ledger-v1';
 
-const CATS = [
-  { id: 'groceries', name: 'Groceries', color: '#2e9e6a', type: 'out' },
-  { id: 'eating', name: 'Eating out', color: '#e0703a', type: 'out' },
-  { id: 'transport', name: 'Transport', color: '#3d7be0', type: 'out' },
-  { id: 'bills', name: 'Rent & bills', color: '#6d5bd0', type: 'out' },
-  { id: 'shopping', name: 'Shopping', color: '#d04f86', type: 'out' },
-  { id: 'fun', name: 'Fun', color: '#d9a20f', type: 'out' },
-  { id: 'health', name: 'Health', color: '#1aa3a3', type: 'out' },
-  { id: 'subs', name: 'Subs', color: '#8a6a4f', type: 'out' },
-  { id: 'other', name: 'Other', color: '#7a8194', type: 'out' },
-  { id: 'salary', name: 'Salary', color: '#11865a', type: 'in' },
-  { id: 'side', name: 'Side income', color: '#3f9b3f', type: 'in' },
-  { id: 'gift', name: 'Gifts & refunds', color: '#4f8f8a', type: 'in' },
-  { id: 'otherin', name: 'Other income', color: '#7a8194', type: 'in' },
-];
-const catById = id => CATS.find(c => c.id === id) || CATS[8];
-
-const KEYWORDS = {
-  groceries: 'grocery groceries supermarket market aldi lidl tesco walmart costco bigbasket blinkit zepto milk bread eggs vegetables fruit',
-  eating: 'lunch dinner breakfast coffee cafe restaurant pizza burger takeaway takeout starbucks zomato swiggy doordash ubereats snack tea brunch sushi',
-  transport: 'uber lyft ola taxi cab bus train metro tube fuel petrol gas parking toll flight rapido',
-  bills: 'rent electricity electric water internet wifi broadband phone mobile insurance bill bills utilities',
-  shopping: 'amazon flipkart clothes shoes shirt jeans shopping gift ikea target',
-  fun: 'movie movies cinema concert game games bar drinks beer party club bowling tickets',
-  health: 'pharmacy doctor medicine meds gym dentist hospital clinic vitamins',
-  subs: 'netflix spotify prime youtube disney icloud subscription hbo chatgpt claude apple',
-  salary: 'salary paycheck payroll wage wages',
-  side: 'freelance invoice client side gig',
-  gift: 'refund cashback gift birthday',
+// Colours people can give their categories (all readable with white text)
+const CAT_COLORS = ['#2e9e6a', '#e0703a', '#3d7be0', '#6d5bd0', '#d04f86', '#d9a20f', '#1aa3a3', '#8a6a4f',
+  '#d64545', '#5b8c2a', '#b45cc9', '#2f7d9e', '#ef8a1f', '#4a5bd4', '#a3672b', '#7a8194'];
+// App accent colours: [light theme, dark theme]
+const ACCENTS = {
+  cobalt: ['#2f52f5', '#8098ff'], violet: ['#7445e8', '#a98bff'], teal: ['#0f8a87', '#3fd0c9'], emerald: ['#178a50', '#4fd18e'],
+  amber: ['#b86e00', '#f4b545'], coral: ['#dd4f38', '#ff8a73'], rose: ['#d23c78', '#ff7eb0'], graphite: ['#2a2f3a', '#d6dae3'],
 };
-const CURRENCIES = { USD: ['$', 1], EUR: ['€', .9], GBP: ['£', .8], INR: ['₹', 80], CAD: ['$', 1.35], AUD: ['$', 1.5], JPY: ['¥', 150], SGD: ['$', 1.35], AED: ['AED ', 3.7] };
+const INCOME = { id: 'income', name: 'Income', color: '#11865a' };
+const NONE = { id: 'none', name: 'Uncategorised', color: '#7a8194' };
+const SUGGESTIONS = ['Groceries', 'Eating out', 'Rent', 'Bills', 'Transport', 'Shopping', 'Fun', 'Health', 'Subscriptions', 'Travel', 'Gym', 'Gifts'];
+
+// Words that hint at a category. A group applies to any category whose name contains one of its aliases.
+const KEYWORD_GROUPS = [
+  { alias: ['grocer', 'supermarket', 'food'], words: 'grocery groceries supermarket market aldi lidl tesco walmart costco bigbasket blinkit zepto milk bread eggs vegetables fruit' },
+  { alias: ['eat', 'dining', 'restaurant', 'food', 'takeaway', 'coffee', 'lunch', 'dinner', 'cafe'], words: 'lunch dinner breakfast coffee cafe restaurant pizza burger takeaway takeout starbucks zomato swiggy doordash ubereats snack tea brunch sushi' },
+  { alias: ['transport', 'travel', 'commute', 'car', 'taxi', 'fuel', 'petrol', 'uber'], words: 'uber lyft ola taxi cab bus train metro tube fuel petrol gas parking toll flight rapido' },
+  { alias: ['rent', 'bill', 'utilit', 'housing', 'home'], words: 'rent electricity electric water internet wifi broadband phone mobile insurance bill bills utilities' },
+  { alias: ['shop', 'clothes', 'amazon'], words: 'amazon flipkart clothes shoes shirt jeans shopping ikea target' },
+  { alias: ['fun', 'entertain', 'going out', 'leisure', 'drinks', 'social', 'night'], words: 'movie movies cinema concert game games bar drinks beer party club bowling tickets' },
+  { alias: ['health', 'medical', 'gym', 'fitness', 'pharmacy'], words: 'pharmacy doctor medicine meds gym dentist hospital clinic vitamins' },
+  { alias: ['subscri', 'stream', 'apps'], words: 'netflix spotify prime youtube disney icloud subscription hbo chatgpt claude' },
+  { alias: ['gift'], words: 'gift gifts birthday present' },
+];
+const INCOME_WORDS = 'salary paycheck payroll wage wages freelance invoice refund cashback income bonus'.split(' ');
+const CURRENCIES = { USD: '$', EUR: '€', GBP: '£', INR: '₹', CAD: '$', AUD: '$', JPY: '¥', SGD: '$', AED: 'AED ' };
 
 // ---------- state ----------
 let S;
@@ -437,66 +505,69 @@ function guessCurrency() {
   } catch (e) {}
   return 'USD';
 }
-function load() {
-  try { const raw = localStorage.getItem(KEY); if (raw) { const d = JSON.parse(raw); if (d && Array.isArray(d.txns)) return d; } } catch (e) {}
-  return sampleState(guessCurrency());
+const freshState = (currency = guessCurrency()) => ({ v: 2, currency, startDay: 1, cats: [], setupDone: false, txns: [], accent: 'cobalt', theme: 'system' });
+// v1 had fixed categories and example data; keep real entries, drop the examples
+const V1_CATS = { groceries: ['Groceries', 0], eating: ['Eating out', 1], transport: ['Transport', 2], bills: ['Rent & bills', 3], shopping: ['Shopping', 4],
+  fun: ['Fun', 5], health: ['Health', 6], subs: ['Subscriptions', 7], other: ['Other', 15] };
+function migrate(d) {
+  if (d.v === 2) return d;
+  if (d.sample) return freshState(d.currency);
+  const S2 = freshState(d.currency); S2.startDay = d.startDay || 1;
+  const used = new Set(d.txns.filter(t => t.type === 'out').map(t => t.cat));
+  Object.entries(V1_CATS).forEach(([id, [name, ci]]) => { const lim = +(d.budgets || {})[id] || 0; if (used.has(id) || lim) S2.cats.push({ id, name, color: CAT_COLORS[ci], limit: lim }); });
+  S2.txns = d.txns.map(t => ({ ...t, cat: t.type === 'in' ? 'income' : (V1_CATS[t.cat] ? t.cat : 'none') }));
+  S2.setupDone = S2.cats.length > 0;
+  return S2;
 }
-let snap = new Map(), snapSettings = '', snapSample = false;
-const settingsJSON = () => JSON.stringify([S.currency, S.startDay, S.budgets]);
-function snapshot() { snap = new Map(S.txns.map(t => [t.id, JSON.stringify(t)])); snapSettings = settingsJSON(); snapSample = !!S.sample; }
+function load() {
+  try { const raw = localStorage.getItem(KEY); if (raw) { const d = JSON.parse(raw); if (d && Array.isArray(d.txns)) return migrate(d); } } catch (e) {}
+  return freshState();
+}
+let snap = new Map(), snapSettings = '';
+const prefs = () => ({ categories: S.cats, setupDone: !!S.setupDone, accent: S.accent, theme: S.theme });
+const settingsJSON = () => JSON.stringify([S.currency, S.startDay, prefs()]);
+function snapshot() { snap = new Map(S.txns.map(t => [t.id, JSON.stringify(t)])); snapSettings = settingsJSON(); }
 function persist() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
 function save() {
   persist();
-  // tell the sync layer what changed since the last save (example data never syncs)
+  // tell the sync layer what changed since the last save
   const changed = [], deleted = []; const now = new Map();
   S.txns.forEach(t => { const j = JSON.stringify(t); now.set(t.id, j); if (snap.get(t.id) !== j) changed.push(t.id); });
-  if (!snapSample) snap.forEach((_, id) => { if (!now.has(id)) deleted.push(id); });
+  snap.forEach((_, id) => { if (!now.has(id)) deleted.push(id); });
   const settings = settingsJSON() !== snapSettings;
-  const wasSample = snapSample; snapshot();
-  if (window.LedgerSync && !S.sample) window.LedgerSync.onLocalChange({ changed: wasSample ? [] : changed, deleted, settings, all: wasSample });
+  snapshot();
+  if (window.LedgerSync) window.LedgerSync.onLocalChange({ changed, deleted, settings, all: false });
 }
 
 const pad2 = n => String(n).padStart(2, '0');
 const iso = d => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 const parseISO = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+const catById = id => S.cats.find(c => c.id === id) || (id === 'income' ? INCOME : NONE);
+const nextColor = () => CAT_COLORS.find(c => !S.cats.some(x => x.color === c)) || CAT_COLORS[S.cats.length % CAT_COLORS.length];
+const parseAmt = v => { const n = parseFloat(String(v || '').replace(/[^\d.]/g, '')); return n > 0 ? Math.round(n * 100) / 100 : 0; };
 
-function sampleState(currency) {
-  const k = CURRENCIES[currency][1];
-  const r = v => { const x = v * k; return x >= 100 ? Math.round(x) : Math.round(x * 100) / 100; };
-  const today = new Date(); const txns = [];
-  const add = (daysAgo, amt, cat, note, type = 'out') => {
-    const d = new Date(today); d.setDate(d.getDate() - daysAgo);
-    txns.push({ id: uid(), amt: r(amt), cat, note, type, date: iso(d), ts: d.getTime() - daysAgo });
-  };
-  for (let m = 0; m < 6; m++) {
-    const base = m * 30 + today.getDate() - 1;
-    if (m > 0 || today.getDate() >= 1) add(base, 3400, 'salary', 'Salary', 'in');
-    add(base - 1 < 0 ? 0 : base - 1, 1250, 'bills', 'Rent');
-    add(base - 3 < 0 ? 0 : base - 3, 64, 'bills', 'Electricity');
-    add(base - 4 < 0 ? 0 : base - 4, 15.99, 'subs', 'Netflix');
-    add(base - 4 < 0 ? 0 : base - 4, 10.99, 'subs', 'Spotify');
-    if (m > 0) for (let i = 0; i < 26; i += 1) {
-      const d = m * 30 + i + Math.max(0, today.getDate() - 30);
-      const pick = (i * 7 + m * 3) % 9;
-      const opts = [[4.5, 'eating', 'Coffee'], [62, 'groceries', 'Groceries'], [14, 'eating', 'Lunch'], [18, 'transport', 'Uber'],
-        [45, 'fun', 'Drinks'], [39, 'shopping', 'Amazon'], [3.2, 'transport', 'Metro'], [28, 'eating', 'Dinner'], [22, 'health', 'Pharmacy']];
-      const o = opts[pick]; add(d, o[0] * (0.8 + ((i * 13 + m) % 5) / 10), o[1], o[2]);
-    }
-  }
-  // current month detail, recent days
-  const cur = [[0, 4.5, 'eating', 'Coffee'], [0, 13.8, 'eating', 'Lunch'], [1, 71.2, 'groceries', 'Groceries'], [1, 4.5, 'eating', 'Coffee'],
-    [2, 16.4, 'transport', 'Uber'], [3, 4.5, 'eating', 'Coffee'], [3, 52, 'fun', 'Concert tickets'], [4, 31.5, 'eating', 'Dinner with Sam'],
-    [5, 48.99, 'shopping', 'Running shoes'], [5, 3.2, 'transport', 'Metro'], [6, 58.6, 'groceries', 'Groceries'], [7, 4.5, 'eating', 'Coffee'],
-    [8, 22, 'health', 'Pharmacy'], [9, 12.4, 'eating', 'Lunch'], [10, 3.2, 'transport', 'Metro'], [11, 420, 'side', 'Freelance logo', 'in']];
-  cur.filter(c => c[0] < today.getDate()).forEach(c => add(c[0], c[1], c[2], c[3], c[4]));
-  const budgets = {}; Object.entries({ groceries: 350, eating: 260, transport: 120, bills: 1400, shopping: 150, fun: 140, health: 60, subs: 40, other: 80 })
-    .forEach(([c, v]) => budgets[c] = r(v));
-  return { v: 1, currency, startDay: 1, txns, budgets, sample: true };
+// ---------- appearance ----------
+let themeSetByApp = false;
+const mqDark = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : { matches: false, addEventListener() {} };
+function applyAppearance() {
+  const root = document.documentElement;
+  if (S.theme === 'light' || S.theme === 'dark') { root.setAttribute('data-theme', S.theme); themeSetByApp = true; }
+  else if (themeSetByApp) { root.removeAttribute('data-theme'); themeSetByApp = false; }
+  const attr = root.getAttribute('data-theme');
+  const dark = attr ? attr === 'dark' : mqDark.matches;
+  const a = ACCENTS[S.accent] || ACCENTS.cobalt;
+  root.style.setProperty('--accent', a[dark ? 1 : 0]);
+  root.style.setProperty('--accent-ink', dark ? '#0d0f14' : '#ffffff');
+  root.style.setProperty('--accent-soft', `color-mix(in srgb, ${a[dark ? 1 : 0]} ${dark ? 18 : 12}%, var(--surface))`);
+  const meta = document.querySelector('meta[name="theme-color"]:not([media])') || null;
+  if (meta) meta.content = dark ? '#0d0f14' : '#f2f3f7';
 }
+mqDark.addEventListener && mqDark.addEventListener('change', applyAppearance);
+const swatchHTML = (colors, selected, attr) => colors.map(([key, c]) => `<button type="button" class="swatch" style="background:${c}" ${attr}="${key}" aria-pressed="${key === selected}" aria-label="${esc(key)}"></button>`).join('');
 
 // ---------- formatting ----------
-const sym = () => CURRENCIES[S.currency][0];
+const sym = () => CURRENCIES[S.currency] || '$';
 const noCents = () => S.currency === 'JPY';
 function money(n, opts = {}) {
   const abs = Math.abs(n);
@@ -507,7 +578,7 @@ function money(n, opts = {}) {
 }
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-const dot = (c, sm) => `<span class="dot${sm ? ' sm' : ''}" style="background:${c.color}">${esc(c.name[0])}</span>`;
+const dot = (c, sm, extra = '') => `<span class="dot${sm ? ' sm' : ''}" style="background:${c.color}" ${extra}>${esc((c.name || '?')[0].toUpperCase())}</span>`;
 
 // ---------- period (supports custom month start day, e.g. payday) ----------
 let viewOffset = 0; // 0 = current period
@@ -522,20 +593,22 @@ function periodFor(offset) {
 }
 const inPeriod = (t, p) => { const d = parseISO(t.date); return d >= p.start && d < p.end; };
 const txIn = p => S.txns.filter(t => inPeriod(t, p));
-const totalBudget = () => Object.values(S.budgets).reduce((a, b) => a + (+b || 0), 0);
+const totalBudget = () => S.cats.reduce((a, c) => a + (+c.limit || 0), 0);
 
 // ---------- render ----------
 let tab = 'home';
 function render() {
+  applyAppearance();
   const p = periodFor(viewOffset);
   $('#monthLabel').textContent = p.label;
   $('#nextM').style.visibility = viewOffset >= 0 ? 'hidden' : 'visible';
-  $('#sampleBanner').hidden = !S.sample;
   $$('.view[id^=view-]').forEach(v => v.hidden = v.id !== 'view-' + tab);
   $$('.tab[data-tab]').forEach(b => b.dataset.tab === tab ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
   if (tab === 'home') renderHome(p);
   if (tab === 'activity') renderActivity(p);
   if (tab === 'plan') renderPlan();
+  const showSetup = !S.setupDone;
+  if (showSetup && $('#setupScreen').hidden) openSetup(); else if (!showSetup) $('#setupScreen').hidden = true;
 }
 
 function renderHome(p) {
@@ -550,14 +623,13 @@ function renderHome(p) {
   const elapsed = isCur ? Math.min(days, Math.floor((now - p.start) / 864e5) + 1) : days;
   const remainingDays = Math.max(1, days - elapsed + 1);
 
+  $('#meterToday').hidden = true;
   if (budget > 0) {
     $('#heroLabel').textContent = left >= 0 ? (isCur ? 'Left to spend' : 'Left over') : 'Over budget by';
     $('#heroAmt').innerHTML = bigMoney(Math.abs(left));
     $('#heroAmt').style.color = left < 0 ? 'var(--bad)' : '';
-    const pct = Math.min(100, out / budget * 100);
-    $('#meterFill').style.width = pct + '%';
-    const pace = elapsed / days * 100;
-    $('#meterToday').style.left = `calc(${isCur ? pace : 100}% - 1px)`;
+    $('#meterFill').style.width = Math.min(100, out / budget * 100) + '%';
+    $('#meterToday').style.left = `calc(${elapsed / days * 100}% - 1px)`;
     $('#meterToday').hidden = !isCur;
     const ratio = (out / budget) / (elapsed / days);
     const pill = $('#pacePill');
@@ -565,11 +637,14 @@ function renderHome(p) {
     else if (isCur && ratio > 1.08) { pill.className = 'pill warn'; pill.textContent = 'Spending fast'; $('#meterFill').style.background = 'var(--warn)'; }
     else { pill.className = 'pill good'; pill.textContent = isCur ? 'On track' : 'Within budget'; $('#meterFill').style.background = 'var(--accent)'; }
     $('#perDay').innerHTML = isCur && left > 0 ? `<strong class="num">${money(left / remainingDays, { round: true })}</strong>/day for ${remainingDays} day${remainingDays > 1 ? 's' : ''}` : '';
+    $('#budgetWrap').hidden = false;
   } else {
-    $('#heroLabel').textContent = 'Spent this month'; $('#heroAmt').innerHTML = bigMoney(out); $('#heroAmt').style.color = '';
-    $('#pacePill').className = 'pill warn'; $('#pacePill').textContent = 'No budget set'; $('#meterFill').style.width = '0';
-    $('#perDay').innerHTML = '<button class="link" data-go="plan">Set a budget</button>';
+    $('#heroLabel').textContent = isCur ? 'Spent this month' : 'Spent'; $('#heroAmt').innerHTML = bigMoney(out); $('#heroAmt').style.color = '';
+    $('#pacePill').className = 'pill warn'; $('#pacePill').textContent = 'No limits yet'; $('#meterFill').style.width = '0';
+    $('#perDay').innerHTML = `<button class="link" data-act="${S.cats.length ? 'plan' : 'setup'}">Set monthly limits</button>`;
+    $('#budgetWrap').hidden = true;
   }
+  $('#spentOf').hidden = !(budget > 0);
   $('#spentLine').textContent = money(out, { round: true });
   $('#budgetLine').textContent = money(budget, { round: true });
   $('#statIn').textContent = money(inc, { round: true });
@@ -589,15 +664,15 @@ function renderHome(p) {
 
   // categories
   const byCat = {}; tx.filter(t => t.type === 'out').forEach(t => byCat[t.cat] = (byCat[t.cat] || 0) + t.amt);
-  const rows = CATS.filter(c => c.type === 'out' && (byCat[c.id] || S.budgets[c.id]))
-    .sort((a, b) => (byCat[b.id] || 0) - (byCat[a.id] || 0));
-  $('#catList').innerHTML = rows.length ? rows.map(c => {
-    const sp = byCat[c.id] || 0, b = +S.budgets[c.id] || 0; const over = b && sp > b;
+  const rows = [...S.cats, ...(byCat.none ? [NONE] : [])].sort((a, b) => (byCat[b.id] || 0) - (byCat[a.id] || 0) || (+b.limit || 0) - (+a.limit || 0));
+  $('#catList').innerHTML = S.cats.length ? rows.map(c => {
+    const sp = byCat[c.id] || 0, b = +c.limit || 0; const over = b && sp > b;
     const w = b ? Math.min(100, sp / b * 100) : (out ? sp / out * 100 : 0);
     return `<button class="row cat-row" data-filter="${c.id}">${dot(c)}<div class="main"><span class="title">${esc(c.name)}</span>
       <div class="bar"><i style="width:${w}%;background:${over ? 'var(--bad)' : c.color}"></i></div></div>
       <div class="right"><span class="amt num">${money(sp, { round: true })}</span><span class="sub ${over ? 'over' : ''}">${b ? (over ? money(sp - b, { round: true }) + ' over' : money(b - sp, { round: true }) + ' left') : 'no limit'}</span></div></button>`;
-  }).join('') : '<div class="empty">Nothing spent yet this month.</div>';
+  }).join('') : `<div class="prompt-card"><strong>Make your first category</strong><span class="small">Group your spending, like Groceries or Rent, and give each one a monthly limit.</span><button class="btn" data-act="setup">Set up categories</button></div>`;
+  $('#catList').classList.toggle('list', S.cats.length > 0);
 
   const recent = [...tx].sort(byNewest).slice(0, 5);
   $('#recentList').innerHTML = recent.length ? recent.map(txRow).join('') : '<div class="empty">No transactions yet. Tap + or type one above.</div>';
@@ -627,8 +702,9 @@ function renderActivity(p) {
   $('#actIn').textContent = '+' + money(tx.filter(t => t.type === 'in').reduce((a, t) => a + t.amt, 0), { round: true });
   $('#actOut').textContent = money(tx.filter(t => t.type === 'out').reduce((a, t) => a + t.amt, 0), { round: true });
   const used = [...new Set(tx.map(t => t.cat))];
+  const filterCats = [...S.cats.filter(c => used.includes(c.id)), ...['none', 'income'].filter(id => used.includes(id)).map(catById)];
   $('#filters').innerHTML = `<button data-f="" aria-pressed="${!filterCat}">All</button>` +
-    CATS.filter(c => used.includes(c.id)).map(c => `<button data-f="${c.id}" aria-pressed="${filterCat === c.id}">${esc(c.name)}</button>`).join('');
+    filterCats.map(c => `<button data-f="${c.id}" aria-pressed="${filterCat === c.id}">${esc(c.name)}</button>`).join('');
   if (filterCat) tx = tx.filter(t => t.cat === filterCat);
   if (q) tx = tx.filter(t => (t.note + ' ' + catById(t.cat).name + ' ' + t.amt).toLowerCase().includes(q));
   tx.sort(byNewest);
@@ -650,28 +726,105 @@ function renderPlan() {
   const prev = cols.slice(0, 5).filter(c => c.v > 0);
   const avg = prev.length ? prev.reduce((a, c) => a + c.v, 0) / prev.length : 0;
   const cur = cols[5];
-  // biggest category change vs average
   const catAvg = {}, catCur = {};
   for (let o = -5; o < 0; o++) txIn(periodFor(o + viewOffset)).filter(t => t.type === 'out').forEach(t => catAvg[t.cat] = (catAvg[t.cat] || 0) + t.amt / 5);
   txIn(cur.p).filter(t => t.type === 'out').forEach(t => catCur[t.cat] = (catCur[t.cat] || 0) + t.amt);
-  const topCat = Object.entries(catCur).filter(([c]) => c !== 'bills').sort((a, b) => b[1] - a[1])[0];
+  const topCat = Object.entries(catCur).sort((a, b) => b[1] - a[1])[0];
   let txt = avg ? `You usually spend <strong class="num">${money(avg, { round: true })}</strong> a month. ` : '';
-  if (topCat) txt += `Your biggest flexible category in ${cur.p.label.split(' ')[0]} is <strong>${esc(catById(topCat[0]).name)}</strong> at <strong class="num">${money(topCat[1], { round: true })}</strong>${catAvg[topCat[0]] ? `, against a typical <span class="num">${money(catAvg[topCat[0]], { round: true })}</span>` : ''}.`;
+  if (topCat) txt += `Your biggest category in ${cur.p.label.split(' ')[0]} is <strong>${esc(catById(topCat[0]).name)}</strong> at <strong class="num">${money(topCat[1], { round: true })}</strong>${catAvg[topCat[0]] ? `, against a typical <span class="num">${money(catAvg[topCat[0]], { round: true })}</span>` : ''}.`;
   $('#insight').innerHTML = txt || 'Add a few transactions and patterns will show up here.';
-  $('#insight').hidden = false;
 
-  $('#budgetTotal').textContent = money(totalBudget(), { round: true }) + ' / month';
-  $('#budgetList').innerHTML = CATS.filter(c => c.type === 'out').map(c => `<div class="row budget-row">${dot(c)}<div class="main"><span class="title">${esc(c.name)}</span>
-    <span class="sub">Avg ${money(catAvg[c.id] || 0, { round: true })}/mo</span></div>
-    <label class="num" style="display:flex;align-items:center;gap:6px;color:var(--muted)">${esc(sym().trim())}<input id="b-${c.id}" data-budget="${c.id}" inputmode="decimal" value="${+S.budgets[c.id] || ''}" placeholder="0" aria-label="${esc(c.name)} budget"></label></div>`).join('');
+  $('#budgetTotal').textContent = totalBudget() ? money(totalBudget(), { round: true }) + ' / month' : '';
+  $('#budgetList').innerHTML = S.cats.map(c => `<button class="row" data-editcat="${c.id}">${dot(c)}<div class="main"><span class="title">${esc(c.name)}</span>
+    <span class="sub">${money(catCur[c.id] || 0, { round: true })} this month${catAvg[c.id] ? ` · avg ${money(catAvg[c.id], { round: true })}` : ''}</span></div>
+    <span class="amt num" style="${+c.limit ? '' : 'color:var(--muted);font-weight:500'}">${+c.limit ? money(+c.limit, { auto: true }) : 'No limit'}</span></button>`).join('') +
+    `<button class="row add-row" data-act="newcat"><span class="dot">+</span><div class="main"><span class="title">Add a category</span></div></button>`;
 }
 const compact = v => { if (!v) return '–'; const s = sym().trim(); if (v >= 1e5) return s + (v / 1e5 >= 10 ? Math.round(v / 1e5) : (v / 1e5).toFixed(1)) + (S.currency === 'INR' ? 'L' : '00k'); if (v >= 1000) return s + (v / 1000).toFixed(v >= 1e4 ? 0 : 1) + 'k'; return s + Math.round(v); };
+
+// ---------- first-run setup ----------
+let setupDraft = [];
+function openSetup() {
+  setupDraft = S.cats.map(c => ({ ...c }));
+  $('#setupCurrency').innerHTML = $('#currencySel').innerHTML; $('#setupCurrency').value = S.currency;
+  renderSetup(); $('#setupScreen').hidden = false; $('#setupScreen').scrollTop = 0;
+}
+function renderSetup() {
+  const have = new Set(setupDraft.map(c => c.name.toLowerCase()));
+  $('#suggest').innerHTML = SUGGESTIONS.filter(n => !have.has(n.toLowerCase())).map(n => `<button type="button" data-suggest="${esc(n)}">+ ${esc(n)}</button>`).join('');
+  $('#setupList').hidden = !setupDraft.length;
+  $('#setupList').innerHTML = setupDraft.map((c, i) => `<div class="setup-row">${dot(c, 0, `data-cycle="${i}" role="button" tabindex="0" aria-label="Change colour"`)}
+    <input class="nm" data-sname="${i}" value="${esc(c.name)}" maxlength="24" aria-label="Category name">
+    <input class="lim num" data-slimit="${i}" value="${+c.limit || ''}" placeholder="${esc(sym().trim())} limit" inputmode="decimal" aria-label="${esc(c.name)} monthly limit">
+    <button type="button" class="x" data-sremove="${i}" aria-label="Remove ${esc(c.name)}">×</button></div>`).join('');
+  updateSetupTotal();
+}
+function updateSetupTotal() {
+  const tot = setupDraft.reduce((a, c) => a + (+c.limit || 0), 0);
+  $('#setupTotal').innerHTML = setupDraft.length ? `${setupDraft.length} categor${setupDraft.length === 1 ? 'y' : 'ies'} · monthly total <strong class="num">${money(tot, { round: true })}</strong>` : '';
+  $('#setupDone').disabled = !setupDraft.length; $('#setupDone').style.opacity = setupDraft.length ? '' : '.45';
+}
+function addDraftCat(name, limit, focusLimit) {
+  name = name.trim(); if (!name) return;
+  if (setupDraft.some(c => c.name.toLowerCase() === name.toLowerCase())) return;
+  const used = new Set(setupDraft.map(c => c.color));
+  setupDraft.push({ id: uid(), name, color: CAT_COLORS.find(c => !used.has(c)) || CAT_COLORS[setupDraft.length % 16], limit: parseAmt(limit) });
+  renderSetup();
+  if (focusLimit) { const el = $(`[data-slimit="${setupDraft.length - 1}"]`); if (el) el.focus(); }
+}
+function finishSetup() {
+  setupDraft = setupDraft.filter(c => c.name.trim());
+  // categories removed during setup: their transactions become uncategorised
+  const keep = new Set(setupDraft.map(c => c.id));
+  S.txns.forEach(t => { if (t.type === 'out' && !keep.has(t.cat) && t.cat !== 'none') t.cat = 'none'; });
+  S.cats = setupDraft.map(c => ({ id: c.id, name: c.name.trim(), color: c.color, limit: +c.limit || 0 }));
+  S.setupDone = true; save(); $('#setupScreen').hidden = true; tab = 'home'; render();
+  toast(S.cats.length ? `Budget ready with ${S.cats.length} categor${S.cats.length === 1 ? 'y' : 'ies'}` : 'You can add categories any time from Plan');
+}
+
+// ---------- category editor ----------
+let catEdit = null; // { id|null, color, returnToAdd }
+function openCatEditor(id, returnToAdd) {
+  const c = id ? S.cats.find(x => x.id === id) : null;
+  catEdit = { id: c ? c.id : null, color: c ? c.color : nextColor(), returnToAdd: !!returnToAdd, armed: false };
+  $('#catSheetTitle').textContent = c ? 'Edit category' : 'New category';
+  $('#catName').value = c ? c.name : ''; $('#catLimit').value = c && +c.limit ? c.limit : ''; $('#catCur').textContent = sym().trim();
+  $('#catDelete').hidden = !c; $('#catDeleteNote').hidden = true; $('#catSave').textContent = c ? 'Save' : 'Add category';
+  renderCatSwatches(); openSheet('#catSheet', true);
+  setTimeout(() => { if (!c) $('#catName').focus(); }, 300);
+}
+function renderCatSwatches() { $('#catSwatches').innerHTML = swatchHTML(CAT_COLORS.map(c => [c, c]), catEdit.color, 'data-catcolor'); }
+function saveCat() {
+  const name = $('#catName').value.trim(); if (!name) { $('#catName').focus(); return; }
+  const dup = S.cats.find(c => c.name.toLowerCase() === name.toLowerCase() && c.id !== catEdit.id);
+  if (dup) { $('#catDeleteNote').hidden = false; $('#catDeleteNote').textContent = `You already have a category called ${dup.name}.`; return; }
+  const limit = parseAmt($('#catLimit').value);
+  let id = catEdit.id;
+  if (id) Object.assign(S.cats.find(c => c.id === id), { name, limit, color: catEdit.color });
+  else { id = uid(); S.cats.push({ id, name, color: catEdit.color, limit }); }
+  S.setupDone = true; save();
+  const back = catEdit.returnToAdd; const isNew = !catEdit.id; catEdit = null;
+  if (back && draft) { reopenAdd(); draft.cat = id; syncSheet(); if (isNew && +draft.amtStr > 0 && !draft.editing) saveDraft(id); }
+  else { closeSheets(); render(); toast(isNew ? `Added ${name}` : `Saved ${name}`); }
+}
+function deleteCat() {
+  const c = S.cats.find(x => x.id === catEdit.id); if (!c) return;
+  const n = S.txns.filter(t => t.cat === c.id).length;
+  if (!catEdit.armed && n) { catEdit.armed = true; $('#catDeleteNote').hidden = false; $('#catDeleteNote').textContent = `${n} transaction${n > 1 ? 's' : ''} will move to Uncategorised. Tap Delete again to confirm.`; return; }
+  const before = { cats: S.cats.map(x => ({ ...x })), moved: S.txns.filter(t => t.cat === c.id).map(t => t.id) };
+  S.cats = S.cats.filter(x => x.id !== c.id); S.txns.forEach(t => { if (t.cat === c.id) t.cat = 'none'; });
+  save(); closeSheets(); render();
+  toast(`Deleted ${c.name}`, () => { S.cats = before.cats; const ids = new Set(before.moved); S.txns.forEach(t => { if (ids.has(t.id)) t.cat = c.id; }); save(); render(); });
+}
 
 // ---------- add / edit sheet ----------
 let draft = null; let repeatList = [];
 function openAdd(t) {
   draft = t ? { ...t, amtStr: String(t.amt), editing: true } : { type: 'out', amtStr: '', date: iso(new Date()), note: '', cat: null, editing: false };
   $('#noteInput').value = draft.note || '';
+  reopenAdd();
+}
+function reopenAdd() {
   $('#editActions').hidden = !draft.editing;
   $('#addSheet').setAttribute('aria-label', draft.editing ? 'Edit transaction' : 'Add transaction');
   syncSheet(); openSheet('#addSheet');
@@ -686,13 +839,17 @@ function syncSheet() {
   const other = draft.date !== today && draft.date !== yest;
   $('#dPickLabel').classList.toggle('on', other); $('#dPickText').textContent = other ? parseISO(draft.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : 'Pick date';
   $('#dPick').value = draft.date;
-  // categories sorted by how often they're used
-  const use = {}; S.txns.forEach(t => use[t.cat] = (use[t.cat] || 0) + 1);
-  const cats = CATS.filter(c => c.type === draft.type).sort((a, b) => (a.id.startsWith('other') - b.id.startsWith('other')) || (use[b.id] || 0) - (use[a.id] || 0));
-  const has = +draft.amtStr > 0;
-  $('#catGrid').innerHTML = cats.map(c => `<button class="cat-btn ${draft.cat === c.id ? 'sel' : ''}" data-cat="${c.id}" ${!has && !draft.editing ? 'disabled' : ''}>${dot(c)}<span>${esc(c.name)}</span></button>`).join('');
-  $('#addHint').textContent = draft.editing ? 'Change anything, then save.' : has ? 'Tap a category to save.' : 'Enter an amount, then tap a category to save.';
-  $('#addHint').hidden = false;
+  const has = +draft.amtStr > 0; const dis = !has && !draft.editing ? 'disabled' : '';
+  let tiles;
+  if (draft.type === 'in') tiles = [INCOME];
+  else {
+    const use = {}; S.txns.forEach(t => use[t.cat] = (use[t.cat] || 0) + 1);
+    tiles = [...S.cats].sort((a, b) => (use[b.id] || 0) - (use[a.id] || 0));
+    tiles.push({ ...NONE, name: S.cats.length ? 'Other' : 'No category' });
+  }
+  $('#catGrid').innerHTML = tiles.map(c => `<button class="cat-btn ${draft.cat === c.id ? 'sel' : ''}" data-cat="${c.id}" ${dis}>${dot(c)}<span>${esc(c.name)}</span></button>`).join('') +
+    (draft.type === 'out' ? `<button class="cat-btn" data-act="newcat-add"><span class="dot" style="background:var(--surface-2);color:var(--fg);font-size:18px">+</span><span>New</span></button>` : '');
+  $('#addHint').textContent = draft.editing ? 'Change anything, then save.' : has ? (draft.type === 'in' ? 'Tap Income to save.' : 'Tap a category to save.') : 'Enter an amount, then tap a category to save.';
 }
 function fmtTyping(s) {
   const [a, b] = s.split('.'); const loc = S.currency === 'INR' ? 'en-IN' : 'en-US';
@@ -719,7 +876,7 @@ function addTx(fields, msgPrefix = 'Added') {
 function saveDraft(cat) {
   const amt = Math.round(parseFloat(draft.amtStr) * 100) / 100;
   if (!(amt > 0)) { $('#addHint').textContent = 'Enter an amount first.'; return; }
-  const fields = { amt, type: draft.type, cat: cat || draft.cat || (draft.type === 'in' ? 'otherin' : 'other'), note: $('#noteInput').value.trim(), date: draft.date };
+  const fields = { amt, type: draft.type, cat: draft.type === 'in' ? 'income' : (cat || draft.cat || 'none'), note: $('#noteInput').value.trim(), date: draft.date };
   if (draft.editing) {
     const before = S.txns.find(x => x.id === draft.id);
     const t = { ...before, ...fields }; commit(t, false); closeSheets();
@@ -730,9 +887,24 @@ function saveDraft(cat) {
 // ---------- quick text entry ----------
 function learnedCat(word) {
   const w = word.toLowerCase();
-  const hits = {}; S.txns.forEach(t => { if (t.note && t.note.toLowerCase().split(/\s+/).includes(w)) hits[t.cat] = (hits[t.cat] || 0) + 1; });
+  const hits = {}; S.txns.forEach(t => { if (t.note && t.note.toLowerCase().split(/\s+/).includes(w) && (t.cat === 'income' || S.cats.some(c => c.id === t.cat))) hits[t.cat] = (hits[t.cat] || 0) + 1; });
   const best = Object.entries(hits).sort((a, b) => b[1] - a[1])[0];
   return best && best[0];
+}
+function keywordsFor(c) {
+  const name = c.name.toLowerCase(); const set = new Set(name.split(/[^a-z0-9]+/).filter(w => w.length > 2));
+  KEYWORD_GROUPS.forEach(g => { if (g.alias.some(a => name.includes(a))) g.words.split(' ').forEach(w => set.add(w)); });
+  return set;
+}
+function guessCat(text) {
+  const lower = text.toLowerCase(); const words = lower.split(/[\s,]+/).filter(Boolean);
+  for (const c of S.cats) if (lower.includes(c.name.toLowerCase())) return c.id;
+  for (const w of words) { const l = learnedCat(w); if (l) return l; }
+  for (const w of words) {
+    if (INCOME_WORDS.includes(w)) return 'income';
+    for (const c of S.cats) { const k = keywordsFor(c); if (k.has(w) || k.has(w.replace(/s$/, ''))) return c.id; }
+  }
+  return null;
 }
 function parseQuick(text) {
   let s = text.trim(); if (!s) return null;
@@ -745,29 +917,27 @@ function parseQuick(text) {
   if (!m) return null;
   let amt = parseFloat(m[1].replace(/,/g, '')); if (/k$/i.test(m[0].trim())) amt *= 1000;
   let note = (s.slice(0, m.index) + ' ' + s.slice(m.index + m[0].length)).replace(/\s+/g, ' ').replace(/^[\s\-–:,]+|[\s\-–:,]+$/g, '').trim();
-  const words = note.toLowerCase().split(/[\s,]+/).filter(Boolean);
-  let cat = null;
-  // explicit category name
-  for (const c of CATS) if (note.toLowerCase().includes(c.name.toLowerCase()) || words.includes(c.id)) { cat = c.id; break; }
-  if (!cat) for (const w of words) { const l = learnedCat(w); if (l) { cat = l; break; } }
-  if (!cat) for (const w of words) { for (const [c, ks] of Object.entries(KEYWORDS)) if (ks.split(' ').includes(w) || ks.split(' ').includes(w.replace(/s$/, ''))) { cat = c; break; } if (cat) break; }
-  if (cat && catById(cat).type === 'in') type = 'in';
-  if (!cat) cat = type === 'in' ? 'otherin' : 'other';
-  if (catById(cat).type !== type) type = catById(cat).type;
+  let cat = guessCat(note);
+  if (cat === 'income') type = 'in';
+  if (type === 'in') cat = 'income'; else if (!cat) cat = 'none';
   note = note ? note[0].toUpperCase() + note.slice(1) : '';
   return { amt: Math.round(amt * 100) / 100, type, cat, note, date };
 }
 function updateHint() {
   const v = $('#quickInput').value; const p = parseQuick(v);
-  $('#quickHint').innerHTML = !v ? 'Try “+2500 salary”, “40 uber yesterday” or “groceries 63”.'
+  $('#quickHint').innerHTML = !v ? 'Try “+2500 salary”, “40 uber yesterday” or “63 groceries”.'
     : p ? `<b>${p.type === 'in' ? '+' : ''}${esc(money(p.amt))}</b> · ${esc(catById(p.cat).name)}${p.note ? ' · ' + esc(p.note) : ''}${p.date !== iso(new Date()) ? ' · ' + relDay(p.date) : ''}`
     : 'Add an amount, like “12.50”.';
 }
 
 // ---------- sheets / toast ----------
 let openId = null;
-function openSheet(sel) { closeSheets(true); openId = sel; $(sel).classList.add('open'); $('#scrim').classList.add('open'); }
-function closeSheets(silent) { $$('.sheet').forEach(s => s.classList.remove('open')); $('#scrim').classList.remove('open'); openId = null; if (!silent) draft = null; $('#eraseConfirm').hidden = true; eraseArmed = false; }
+function openSheet(sel, keepDraft) { closeSheets(true); openId = sel; $(sel).classList.add('open'); $('#scrim').classList.add('open'); }
+function closeSheets(silent) {
+  $$('.sheet').forEach(s => s.classList.remove('open')); $('#scrim').classList.remove('open'); openId = null;
+  if (!silent) { draft = null; catEdit = null; }
+  $('#eraseConfirm').hidden = true; eraseArmed = false;
+}
 let toastTimer, undoFn;
 function toast(msg, undo) {
   $('#toastText').textContent = msg; undoFn = undo; $('#toastUndo').hidden = !undo;
@@ -794,21 +964,27 @@ function importCSV(text) {
   const col = names => h.findIndex(x => names.some(n => x.includes(n)));
   const di = col(['date']), ai = col(['amount', 'value', 'cost', 'price']), ci = col(['category', 'cat']), ni = col(['note', 'description', 'desc', 'memo', 'item', 'name']), ti = col(['type']);
   if (di < 0 || ai < 0) return -1;
+  const hasNegatives = rows.slice(1).some(x => parseFloat((x[ai] || '').replace(/[^\d.\-]/g, '')) < 0);
   let n = 0;
   rows.slice(1).forEach(r => {
-    let raw = (r[ai] || '').replace(/[^\d.\-]/g, ''); let amt = parseFloat(raw); if (!amt) return;
+    const amt = parseFloat((r[ai] || '').replace(/[^\d.\-]/g, '')); if (!amt) return;
     const d = new Date(r[di]); if (isNaN(d)) return;
-    let type = amt < 0 ? 'out' : 'out'; const tStr = ti >= 0 ? (r[ti] || '').toLowerCase() : '';
-    if (tStr.startsWith('inc') || tStr === 'in' || (ti < 0 && amt > 0 && rows.slice(1).some(x => parseFloat((x[ai] || '').replace(/[^\d.\-]/g, '')) < 0))) type = 'in';
+    const tStr = ti >= 0 ? (r[ti] || '').toLowerCase() : '';
+    let type = 'out';
+    if (tStr.startsWith('inc') || tStr === 'in' || (ti < 0 && hasNegatives && amt > 0)) type = 'in';
     if (tStr.startsWith('exp') || tStr === 'out') type = 'out';
-    const cname = ci >= 0 ? (r[ci] || '').trim().toLowerCase() : '';
-    let cat = (CATS.find(c => c.name.toLowerCase() === cname || c.id === cname) || {}).id;
+    const cname = ci >= 0 ? (r[ci] || '').trim() : '';
     const note = ni >= 0 ? (r[ni] || '').trim() : '';
-    if (!cat) { const p = parseQuick('1 ' + (cname + ' ' + note)); cat = p ? p.cat : 'other'; }
-    if (catById(cat).type !== type) cat = type === 'in' ? 'otherin' : (cat === 'otherin' ? 'other' : cat);
-    if (catById(cat).type !== type) cat = type === 'in' ? 'otherin' : 'other';
+    let cat = 'income';
+    if (type === 'out') {
+      const found = S.cats.find(c => c.name.toLowerCase() === cname.toLowerCase());
+      if (found) cat = found.id;
+      else if (cname && !/^(income|uncategori[sz]ed|other)$/i.test(cname)) { cat = uid(); S.cats.push({ id: cat, name: cname.slice(0, 24), color: nextColor(), limit: 0 }); }
+      else { const g = guessCat(note); cat = g && g !== 'income' ? g : 'none'; }
+    }
     S.txns.push({ id: uid(), ts: d.getTime(), amt: Math.abs(amt), type, cat, note, date: iso(d) }); n++;
   });
+  if (n) S.setupDone = true;
   return n;
 }
 
@@ -816,9 +992,26 @@ function importCSV(text) {
 let eraseArmed = false;
 function go(t) { tab = t; render(); window.scrollTo({ top: 0 }); }
 document.addEventListener('click', e => {
-  const el = e.target.closest('button, [data-go]'); if (!el) return;
+  const el = e.target.closest('button, [data-go], [data-cycle]'); if (!el) return;
   if (el.dataset.tab) return go(el.dataset.tab);
   if (el.dataset.go) return go(el.dataset.go);
+  if (el.dataset.act === 'setup') return openSetup();
+  if (el.dataset.act === 'plan') return go('plan');
+  if (el.dataset.act === 'newcat') return openCatEditor(null);
+  if (el.dataset.act === 'newcat-add') return openCatEditor(null, true);
+  if (el.dataset.editcat) return openCatEditor(el.dataset.editcat);
+  if (el.dataset.catcolor) { catEdit.color = el.dataset.catcolor; return renderCatSwatches(); }
+  if (el.dataset.accent) { S.accent = el.dataset.accent; save(); applyAppearance(); return renderAppearanceControls(); }
+  if (el.dataset.themeOpt) { S.theme = el.dataset.themeOpt; save(); applyAppearance(); return renderAppearanceControls(); }
+  if (el.dataset.suggest) return addDraftCat(el.dataset.suggest, '', true);
+  if (el.dataset.sremove !== undefined) { setupDraft.splice(+el.dataset.sremove, 1); return renderSetup(); }
+  if (el.dataset.cycle !== undefined) {
+    // next colour no other category is using
+    const c = setupDraft[+el.dataset.cycle]; const used = new Set(setupDraft.filter(x => x !== c).map(x => x.color));
+    let i = CAT_COLORS.indexOf(c.color);
+    for (let n = 0; n < CAT_COLORS.length; n++) { i = (i + 1) % CAT_COLORS.length; if (!used.has(CAT_COLORS[i])) break; }
+    c.color = CAT_COLORS[i]; return renderSetup();
+  }
   if (el.dataset.edit) { const t = S.txns.find(x => x.id === el.dataset.edit); if (t) openAdd(t); return; }
   if (el.dataset.filter) { filterCat = el.dataset.filter; $('#search').value = ''; return go('activity'); }
   if (el.dataset.f !== undefined) { filterCat = el.dataset.f || null; return render(); }
@@ -827,10 +1020,28 @@ document.addEventListener('click', e => {
   if (el.closest('#pad')) return key(el.dataset.k || el.textContent);
   if (el.hasAttribute('data-close')) return closeSheets();
 });
-$('#scrim').addEventListener('click', () => closeSheets());
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.dataset.sname !== undefined) { setupDraft[+t.dataset.sname].name = t.value; }
+  if (t.dataset.slimit !== undefined) { setupDraft[+t.dataset.slimit].limit = parseAmt(t.value); updateSetupTotal(); }
+});
+document.addEventListener('keydown', e => {
+  if (e.target.dataset && e.target.dataset.cycle !== undefined && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); e.target.click(); return; }
+  if (e.key === 'Escape' && openId) return closeSheets();
+  if (openId !== '#addSheet' || e.target.matches('input, select, textarea')) return;
+  if (/^[\d.]$/.test(e.key)) key(e.key); else if (e.key === 'Backspace') key('back');
+});
+$('#setupAdd').addEventListener('submit', e => { e.preventDefault(); addDraftCat($('#setupName').value, $('#setupLimit').value); $('#setupName').value = ''; $('#setupLimit').value = ''; $('#setupName').focus(); });
+$('#setupCurrency').addEventListener('change', e => { S.currency = e.target.value; save(); renderSetup(); });
+$('#setupDone').addEventListener('click', () => { const pending = $('#setupName').value.trim(); if (pending) { addDraftCat(pending, $('#setupLimit').value); $('#setupName').value = ''; $('#setupLimit').value = ''; } if (setupDraft.length) finishSetup(); });
+$('#setupSkip').addEventListener('click', () => { S.setupDone = true; save(); $('#setupScreen').hidden = true; render(); });
+$('#catForm').addEventListener('submit', e => { e.preventDefault(); saveCat(); });
+$('#catDelete').addEventListener('click', deleteCat);
+$('#manageCats').addEventListener('click', () => { closeSheets(); go('plan'); });
+$('#scrim').addEventListener('click', () => { if (catEdit && catEdit.returnToAdd && draft) { catEdit = null; reopenAdd(); } else closeSheets(); });
 $('#fab').addEventListener('click', () => openAdd());
 $('#typeOut').addEventListener('click', () => { draft.type = 'out'; draft.cat = null; syncSheet(); });
-$('#typeIn').addEventListener('click', () => { draft.type = 'in'; draft.cat = null; syncSheet(); });
+$('#typeIn').addEventListener('click', () => { draft.type = 'in'; draft.cat = 'income'; syncSheet(); });
 $('#dToday').addEventListener('click', () => { draft.date = iso(new Date()); syncSheet(); });
 $('#dYest').addEventListener('click', () => { const d = new Date(); d.setDate(d.getDate() - 1); draft.date = iso(d); syncSheet(); });
 $('#dPick').addEventListener('change', e => { if (e.target.value) { draft.date = e.target.value; syncSheet(); } });
@@ -839,12 +1050,7 @@ $('#delBtn').addEventListener('click', () => {
   const t = S.txns.find(x => x.id === draft.id); S.txns = S.txns.filter(x => x.id !== draft.id); save(); closeSheets(); render();
   toast('Deleted', () => commit(t, true));
 });
-$('#noteInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); if (draft.editing) saveDraft(); else if (+draft.amtStr > 0) { const p = parseQuick('1 ' + e.target.value); saveDraft(p && p.cat !== 'other' ? p.cat : null); } } });
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && openId) return closeSheets();
-  if (openId !== '#addSheet' || e.target.matches('input, select, textarea')) return;
-  if (/^[\d.]$/.test(e.key)) key(e.key); else if (e.key === 'Backspace') key('back');
-});
+$('#noteInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); if (draft.editing) saveDraft(); else if (+draft.amtStr > 0) saveDraft(draft.type === 'in' ? 'income' : guessCat(e.target.value)); } });
 $('#toastUndo').addEventListener('click', () => { if (undoFn) undoFn(); undoFn = null; $('#toast').classList.remove('show'); });
 $('#prevM').addEventListener('click', () => { viewOffset--; render(); });
 $('#nextM').addEventListener('click', () => { if (viewOffset < 0) viewOffset++; render(); });
@@ -855,25 +1061,25 @@ $('#quickForm').addEventListener('submit', e => {
   $('#quickInput').value = ''; updateHint(); addTx(p);
 });
 $('#search').addEventListener('input', () => render());
-$('#clearSample').addEventListener('click', () => { const old = S; S = { ...S, txns: [], sample: false }; save(); render(); toast('Example data cleared', () => { S = old; save(); render(); }); });
-document.addEventListener('change', e => {
-  const b = e.target.dataset && e.target.dataset.budget; if (!b) return;
-  const v = parseFloat(e.target.value.replace(/[^\d.]/g, '')); S.budgets[b] = v > 0 ? v : 0; save(); render(); toast('Budget updated');
-});
+function renderAppearanceControls() {
+  $$('#themeSeg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.themeOpt === (S.theme || 'system')));
+  const dark = (document.documentElement.getAttribute('data-theme') || (mqDark.matches ? 'dark' : 'light')) === 'dark';
+  $('#accentSwatches').innerHTML = swatchHTML(Object.entries(ACCENTS).map(([k, v]) => [k, v[dark ? 1 : 0]]), S.accent, 'data-accent');
+}
 $('#openSettings').addEventListener('click', () => {
   $('#currencySel').value = S.currency;
   $('#startDaySel').innerHTML = Array.from({ length: 28 }, (_, i) => `<option value="${i + 1}">${i + 1}${i === 0 ? ' (calendar month)' : ''}</option>`).join('');
-  $('#startDaySel').value = S.startDay || 1; openSheet('#settingsSheet');
+  $('#startDaySel').value = S.startDay || 1; renderAppearanceControls(); openSheet('#settingsSheet');
 });
 $('#currencySel').addEventListener('change', e => { S.currency = e.target.value; save(); render(); });
 $('#startDaySel').addEventListener('change', e => { S.startDay = +e.target.value; viewOffset = 0; save(); render(); });
 $('#eraseBtn').addEventListener('click', () => {
   if (!eraseArmed) { eraseArmed = true; $('#eraseConfirm').hidden = false; return; }
-  S = { v: 1, currency: S.currency, startDay: S.startDay, txns: [], budgets: {}, sample: false }; save(); closeSheets(); render(); toast('All data erased');
+  S = { ...freshState(S.currency), accent: S.accent, theme: S.theme }; save(); closeSheets(); tab = 'home'; render(); toast('All data erased');
 });
 $('#importFile').addEventListener('change', e => {
   const f = e.target.files[0]; if (!f) return; const r = new FileReader();
-  r.onload = () => { if (S.sample) S.txns = []; S.sample = false; const n = importCSV(String(r.result)); save(); render(); closeSheets();
+  r.onload = () => { const n = importCSV(String(r.result)); save(); render(); closeSheets();
     toast(n > 0 ? `Imported ${n} transactions` : n === -1 ? 'That file needs a Date and an Amount column' : 'No transactions found in that file'); e.target.value = ''; };
   r.readAsText(f);
 });
@@ -884,7 +1090,7 @@ $('#copyCsv').addEventListener('click', () => {
   try { navigator.clipboard.writeText(box.value).then(() => toast('Copied. Paste into Excel or Sheets.'), fallback); } catch (err) { fallback(); }
 });
 $('#dlCsv').addEventListener('click', () => {
-  try { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([toCSV()], { type: 'text/csv' })); a.download = `budget-${iso(new Date())}.csv`; document.body.appendChild(a); a.click(); a.remove(); toast('Downloading budget CSV'); }
+  try { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([toCSV()], { type: 'text/csv' })); a.download = `tally-${iso(new Date())}.csv`; document.body.appendChild(a); a.click(); a.remove(); toast('Downloading CSV'); }
   catch (err) { toast('Download blocked here. Use Copy instead.'); }
 });
 
@@ -892,26 +1098,31 @@ $('#dlCsv').addEventListener('click', () => {
 $$('.sheet').forEach(sh => { let y0 = null; sh.addEventListener('touchstart', e => { y0 = sh.scrollTop <= 0 ? e.touches[0].clientY : null; }, { passive: true });
   sh.addEventListener('touchend', e => { if (y0 !== null && e.changedTouches[0].clientY - y0 > 80) closeSheets(); y0 = null; }); });
 
-S = load(); snapshot();
+S = load(); persist(); snapshot();
 window.Ledger = {
   state: () => S,
   render: () => render(),
   toast: (m) => toast(m),
+  prefs,
   // apply rows from the server without echoing them back
   applyRemote({ upserts = [], deletes = [], settings = null }) {
     const byId = new Map(S.txns.map(t => [t.id, t]));
     upserts.forEach(t => byId.set(t.id, t)); deletes.forEach(id => byId.delete(id));
     S.txns = [...byId.values()];
-    if (settings) { if (settings.currency) S.currency = settings.currency; if (settings.startDay) S.startDay = settings.startDay; if (settings.budgets) S.budgets = settings.budgets; }
+    if (settings) {
+      if (settings.currency) S.currency = settings.currency; if (settings.startDay) S.startDay = settings.startDay;
+      const b = settings.budgets;
+      if (b && Array.isArray(b.categories)) { S.cats = b.categories; S.setupDone = b.setupDone !== false; if (b.accent) S.accent = b.accent; if (b.theme) S.theme = b.theme; }
+    }
     persist(); snapshot(); render();
   },
-  reset(keepSettings) { S = { v: 1, currency: keepSettings ? S.currency : guessCurrency(), startDay: keepSettings ? S.startDay : 1, txns: [], budgets: keepSettings ? S.budgets : {}, sample: false }; persist(); snapshot(); render(); },
-  clearSample() { if (S.sample) { S.txns = []; S.sample = false; persist(); snapshot(); render(); } },
+  reset() { S = freshState(); persist(); snapshot(); render(); },
+  clearSample() {},
   closeSheets: () => closeSheets(),
 };
 if (!window.PWA_MODE) $('#dlCsv').hidden = true;
 render();
-if (location.hash === '#add') openAdd();
+if (location.hash === '#add' && S.setupDone) openAdd();
 if ('serviceWorker' in navigator && window.PWA_MODE) { try { navigator.serviceWorker.register('sw.js'); } catch (e) {} }
 })();
 </script>
