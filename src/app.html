@@ -57,6 +57,38 @@ button { cursor: pointer; border: 0; background: none; padding: 0 }
 .meter > b { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--fg); border-radius: 2px; opacity: .55 }
 .hero-foot { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 13.5px; flex-wrap: wrap }
 .hero-foot strong { color: var(--fg); font-weight: 600 }
+.pie-wrap { display: flex; align-items: center; gap: 18px }
+.pie-box { position: relative; width: 150px; flex: none; max-width: 45% }
+.pie { width: 100%; height: auto; display: block }
+.pie circle { transition: stroke-dasharray .5s cubic-bezier(.2,.8,.2,1), stroke-dashoffset .5s cubic-bezier(.2,.8,.2,1) }
+.pie-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none }
+.pie-center .num { font-size: clamp(18px, 6vw, 26px); font-weight: 700; line-height: 1.1 }
+.pie-center .num .cents { font-size: .6em; color: var(--muted) }
+.pie-legend { list-style: none; margin: 0; padding: 0; flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px }
+.pie-legend button { display: grid; grid-template-columns: 10px 1fr auto; align-items: center; gap: 8px; width: 100%; padding: 5px 4px; border-radius: 8px; text-align: left; font-size: 13.5px }
+.pie-legend button:hover, .pie-legend button.hl { background: var(--surface-2) }
+.pie-legend .sw { width: 10px; height: 10px; border-radius: 3px }
+.pie-legend .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0 }
+.pie-legend .v { font-family: var(--display); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap }
+.pie-legend .v small { color: var(--muted); font-weight: 500; margin-left: 4px; font-family: var(--body) }
+.pie-legend .empty-note { color: var(--muted); font-size: 13.5px; padding: 4px }
+.budget-block { display: flex; flex-direction: column; gap: 10px }
+.trend-card { background: var(--surface); border-radius: var(--r); padding: 14px 14px 8px; display: flex; flex-direction: column; gap: 8px }
+.trend-head { display: flex; flex-direction: column; gap: 2px }
+.trend-head strong { font: 700 16px/1.3 var(--display) }
+.trend-head strong.up { color: var(--bad) } .trend-head strong.down { color: var(--good) }
+.trend-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted) }
+.trend-legend > span { display: inline-flex; align-items: center; gap: 6px }
+.trend-legend .sw { width: 14px; height: 2px; border-radius: 2px; display: inline-block; background: var(--accent) }
+.trend-legend .sw.prev { background: var(--muted); opacity: .6 }
+.trend-legend .sw.lim { background: none; border-top: 2px dashed var(--muted); height: 0 }
+.trend-chart { position: relative }
+.trend-chart svg { width: 100%; height: auto; display: block; touch-action: pan-y }
+.trend-chart .ax { font: 500 10px var(--body); fill: var(--muted) }
+.trend-chart .grid { stroke: var(--line); stroke-width: 1 }
+.trend-tip { position: absolute; top: 0; left: 0; transform: translateX(-50%); background: var(--fg); color: var(--bg); border-radius: 8px; padding: 5px 8px; font-size: 12px; line-height: 1.35; pointer-events: none; white-space: nowrap; z-index: 2 }
+.mover .chg { font-weight: 700; font-size: 14px; white-space: nowrap; font-family: var(--display) }
+.mover .chg.up { color: var(--bad) } .mover .chg.down { color: var(--good) }
 .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; border-top: 1px solid var(--line); padding-top: 14px }
 .stats div { display: flex; flex-direction: column; gap: 2px; min-width: 0 }
 .stats .num { font-size: clamp(14px, 4.2vw, 18px); font-weight: 700; overflow-wrap: anywhere }
@@ -248,16 +280,22 @@ textarea.csv { width: 100%; height: 110px; font: 12px/1.4 ui-monospace, monospac
   <div class="view" id="view-home">
     <div class="hero">
       <div class="hero-head">
-        <div>
-          <div class="label" id="heroLabel">Left to spend</div>
-          <div class="big num" id="heroAmt">$0</div>
-        </div>
+        <div class="label" id="heroLabel">Spending this month</div>
         <span class="pill good" id="pacePill">On track</span>
       </div>
-      <div class="meter" aria-hidden="true" id="budgetWrap"><i id="meterFill"></i><b id="meterToday"></b></div>
-      <div class="hero-foot">
-        <span id="spentOf"><strong class="num" id="spentLine">$0</strong> spent of <span class="num" id="budgetLine">$0</span></span>
-        <span id="perDay"></span>
+      <div class="pie-wrap">
+        <div class="pie-box">
+          <svg class="pie" id="pie" viewBox="0 0 160 160" role="img" aria-label="Spending by category"></svg>
+          <div class="pie-center"><span class="num" id="heroAmt">$0</span><span class="small">spent</span></div>
+        </div>
+        <ul class="pie-legend" id="pieLegend"></ul>
+      </div>
+      <div class="budget-block" id="budgetBlock">
+        <div class="meter" aria-hidden="true" id="budgetWrap"><i id="meterFill"></i><b id="meterToday"></b></div>
+        <div class="hero-foot">
+          <span id="spentOf"><strong class="num" id="leftLine">$0</strong> <span id="leftWord">left</span> of <span class="num" id="budgetLine">$0</span></span>
+          <span id="perDay"></span>
+        </div>
       </div>
       <div class="stats">
         <div><span class="label">Income</span><span class="num" id="statIn">$0</span></div>
@@ -281,6 +319,16 @@ textarea.csv { width: 100%; height: 110px; font: 12px/1.4 ui-monospace, monospac
     <section>
       <div class="sec-head"><h2>Where it's going</h2><button class="link" data-go="plan">Edit limits</button></div>
       <div class="list" id="catList"></div>
+    </section>
+
+    <section id="trendSec">
+      <div class="sec-head"><h2>Spending trends</h2><button class="link" data-go="plan">6-month view</button></div>
+      <div class="trend-card">
+        <div class="trend-head"><strong id="trendHeadline"></strong><span class="small" id="trendSub"></span></div>
+        <div class="trend-legend" aria-hidden="true"><span><i class="sw cur"></i><span id="curLegend">This month</span></span><span><i class="sw prev"></i><span id="prevLegend">Last month</span></span><span id="limLegend"><i class="sw lim"></i>Limit</span></div>
+        <div class="trend-chart"><div class="trend-tip" id="trendTip" hidden></div><svg id="trendSvg" viewBox="0 0 320 160" role="img" aria-label="Running total of spending this month compared with last month"></svg></div>
+      </div>
+      <div class="list" id="moverList"></div>
     </section>
 
     <section id="saveSec" hidden>
@@ -628,30 +676,31 @@ function renderHome(p) {
   const elapsed = isCur ? Math.min(days, Math.floor((now - p.start) / 864e5) + 1) : days;
   const remainingDays = Math.max(1, days - elapsed + 1);
 
+  $('#heroLabel').textContent = isCur ? 'Spending this month' : `Spending in ${p.label}`;
+  $('#heroAmt').innerHTML = bigMoney(out);
+  renderPie(tx, out);
   $('#meterToday').hidden = true;
+  $('#budgetBlock').hidden = false;
   if (budget > 0) {
-    $('#heroLabel').textContent = left >= 0 ? (isCur ? 'Left to spend' : 'Left over') : 'Over budget by';
-    $('#heroAmt').innerHTML = bigMoney(Math.abs(left));
-    $('#heroAmt').style.color = left < 0 ? 'var(--bad)' : '';
     $('#meterFill').style.width = Math.min(100, out / budget * 100) + '%';
     $('#meterToday').style.left = `calc(${elapsed / days * 100}% - 1px)`;
     $('#meterToday').hidden = !isCur;
     const ratio = (out / budget) / (elapsed / days);
-    const pill = $('#pacePill');
+    const pill = $('#pacePill'); pill.hidden = false;
     if (left < 0) { pill.className = 'pill bad'; pill.textContent = 'Over budget'; $('#meterFill').style.background = 'var(--bad)'; }
     else if (isCur && ratio > 1.08) { pill.className = 'pill warn'; pill.textContent = 'Spending fast'; $('#meterFill').style.background = 'var(--warn)'; }
     else { pill.className = 'pill good'; pill.textContent = isCur ? 'On track' : 'Within budget'; $('#meterFill').style.background = 'var(--accent)'; }
+    $('#leftLine').textContent = money(Math.abs(left), { round: true });
+    $('#leftLine').style.color = left < 0 ? 'var(--bad)' : '';
+    $('#leftWord').textContent = left < 0 ? 'over' : 'left';
+    $('#budgetLine').textContent = money(budget, { round: true });
+    $('#spentOf').hidden = false; $('#budgetWrap').hidden = false;
     $('#perDay').innerHTML = isCur && left > 0 ? `<strong class="num">${money(left / remainingDays, { round: true })}</strong>/day for ${remainingDays} day${remainingDays > 1 ? 's' : ''}` : '';
-    $('#budgetWrap').hidden = false;
   } else {
-    $('#heroLabel').textContent = isCur ? 'Spent this month' : 'Spent'; $('#heroAmt').innerHTML = bigMoney(out); $('#heroAmt').style.color = '';
-    $('#pacePill').className = 'pill warn'; $('#pacePill').textContent = 'No limits yet'; $('#meterFill').style.width = '0';
+    $('#pacePill').hidden = true;
+    $('#spentOf').hidden = true; $('#budgetWrap').hidden = true;
     $('#perDay').innerHTML = `<button class="link" data-act="${S.cats.length ? 'plan' : 'setup'}">Set monthly limits</button>`;
-    $('#budgetWrap').hidden = true;
   }
-  $('#spentOf').hidden = !(budget > 0);
-  $('#spentLine').textContent = money(out, { round: true });
-  $('#budgetLine').textContent = money(budget, { round: true });
   $('#statIn').textContent = money(inc, { round: true });
   $('#statOut').textContent = money(out, { round: true });
   // Saved = money moved into savings/investments; Left over = income not spent or saved
@@ -693,9 +742,117 @@ function renderHome(p) {
       <div class="right"><span class="amt num">${money(v, { round: true })}</span><span class="sub ${g && v >= g ? 'done' : ''}">${g ? (v >= g ? 'Target reached' : money(g - v, { round: true }) + ' to go') : 'no target'}</span></div></button>`;
   }).join('');
 
+  renderTrends(p, elapsed, days, budget);
+
   const recent = [...tx].sort(byNewest).slice(0, 5);
   $('#recentList').innerHTML = recent.length ? recent.map(txRow).join('') : '<div class="empty">No transactions yet. Tap + or type one above.</div>';
 }
+// ---------- pie: this month's spending by category ----------
+function renderPie(tx, out) {
+  const byCat = {}; tx.filter(isSpend).forEach(t => byCat[t.cat] = (byCat[t.cat] || 0) + t.amt);
+  let items = Object.entries(byCat).map(([id, v]) => ({ c: catById(id), v })).sort((a, b) => b.v - a.v);
+  if (items.length > 6) { // fold the tail into one slice rather than inventing more colours
+    const rest = items.slice(5).reduce((a, x) => a + x.v, 0);
+    items = items.slice(0, 5).concat([{ c: { id: '', name: `${items.length - 5} more`, color: '#8a90a0' }, v: rest }]);
+  }
+  const r = 62, C = 2 * Math.PI * r, gap = items.length > 1 ? 2 : 0;
+  let acc = 0;
+  const arcs = items.map((it, i) => {
+    const len = out ? it.v / out * C : 0;
+    const arc = `<circle cx="80" cy="80" r="${r}" fill="none" stroke="${it.c.color}" stroke-width="24" data-pie="${i}"
+      stroke-dasharray="${Math.max(len - gap, 0.6).toFixed(2)} ${C.toFixed(2)}" stroke-dashoffset="${(-acc).toFixed(2)}"><title>${esc(it.c.name)}: ${esc(money(it.v))}</title></circle>`;
+    acc += len; return arc;
+  }).join('');
+  $('#pie').innerHTML = `<g transform="rotate(-90 80 80)"><circle cx="80" cy="80" r="${r}" fill="none" stroke="var(--surface-2)" stroke-width="24"/>${arcs}</g>`;
+  $('#pie').setAttribute('aria-label', items.length ? 'Spending by category: ' + items.map(it => `${it.c.name} ${money(it.v)}`).join(', ') : 'Nothing spent yet');
+  $('#pieLegend').innerHTML = items.length ? items.map((it, i) => `<li><button ${it.c.id ? `data-filter="${it.c.id}"` : 'data-go="activity"'} data-pieleg="${i}">
+      <span class="sw" style="background:${it.c.color}"></span><span class="nm">${esc(it.c.name)}</span>
+      <span class="v">${money(it.v, { round: true })}<small>${Math.round(it.v / out * 100)}%</small></span></button></li>`).join('')
+    : `<li class="empty-note">Nothing spent yet this month. Log a purchase and it shows up here.</li>`;
+}
+
+// ---------- trends: running total vs last month, biggest category changes ----------
+let trendData = null;
+function cumulative(p, upto) {
+  const days = Math.round((p.end - p.start) / 864e5); const daily = new Array(days).fill(0);
+  txIn(p).filter(isSpend).forEach(t => { const d = Math.floor((parseISO(t.date) - p.start) / 864e5); if (d >= 0 && d < days) daily[d] += t.amt; });
+  const out = []; let run = 0;
+  for (let d = 0; d < Math.min(days, upto); d++) { run += daily[d]; out.push(run); }
+  return out;
+}
+function spendByCatUpTo(p, dayCount) {
+  const lim = new Date(p.start); lim.setDate(lim.getDate() + dayCount);
+  const m = {}; txIn(p).filter(t => isSpend(t) && parseISO(t.date) < lim).forEach(t => m[t.cat] = (m[t.cat] || 0) + t.amt);
+  return m;
+}
+function renderTrends(p, elapsed, days, budget) {
+  const prevP = periodFor(viewOffset - 1);
+  const prevDays = Math.round((prevP.end - prevP.start) / 864e5);
+  const cur = cumulative(p, elapsed), prev = cumulative(prevP, prevDays);
+  const hasPrev = prev.length && prev[prev.length - 1] > 0;
+  $('#curLegend').textContent = viewOffset === 0 ? 'This month' : p.short;
+  $('#prevLegend').textContent = viewOffset === 0 ? 'Last month' : prevP.short;
+  // headline: where you are vs the same day last month
+  const nowV = cur[cur.length - 1] || 0, thenV = prev[Math.min(elapsed, prevDays) - 1] || 0, diff = nowV - thenV;
+  const h = $('#trendHeadline'); h.className = '';
+  if (!hasPrev) { h.textContent = nowV ? `${money(nowV, { round: true })} spent so far` : 'No spending yet'; $('#trendSub').textContent = 'Trends fill in once you have a month of history.'; }
+  else if (Math.abs(diff) < 1) { h.textContent = 'About the same as last month'; $('#trendSub').textContent = `${money(nowV, { round: true })} by day ${elapsed}, same as ${prevP.short}.`; }
+  else {
+    h.className = diff > 0 ? 'up' : 'down';
+    h.textContent = `${diff > 0 ? '↑' : '↓'} ${money(Math.abs(diff), { round: true })} ${diff > 0 ? 'more' : 'less'} than this point last month`;
+    $('#trendSub').textContent = `${money(nowV, { round: true })} by day ${elapsed}, against ${money(thenV, { round: true })} in ${prevP.short}.`;
+  }
+  // nothing to draw yet: keep just the headline
+  const empty = !nowV && !hasPrev;
+  $('#trendSec .trend-legend').hidden = empty; $('#trendSec .trend-chart').hidden = empty;
+  if (empty) $('#trendSub').textContent = 'Log a few things and your running total shows up here.';
+  // chart geometry
+  const W = 320, H = 160, L = 38, R = 10, T = 10, B = 22;
+  const maxDays = Math.max(days, prevDays);
+  const maxV = Math.max(1, ...cur, ...prev, budget > 0 ? budget : 0) * 1.05;
+  const x = d => L + (d - 1) / Math.max(1, maxDays - 1) * (W - L - R);
+  const y = v => T + (1 - v / maxV) * (H - T - B);
+  const line = arr => arr.map((v, i) => `${i ? 'L' : 'M'}${x(i + 1).toFixed(1)},${y(v).toFixed(1)}`).join('');
+  const ticks = [0, maxV / 2, maxV].map(v => `<line class="grid" x1="${L}" x2="${W - R}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/><text class="ax" x="${L - 6}" y="${(y(v) + 3).toFixed(1)}" text-anchor="end">${esc(compact(v) === '–' ? sym().trim() + '0' : compact(v))}</text>`).join('');
+  const xt = [1, Math.round(maxDays / 2), maxDays].map(d => `<text class="ax" x="${x(d).toFixed(1)}" y="${H - 6}" text-anchor="${d === 1 ? 'start' : d === maxDays ? 'end' : 'middle'}">Day ${d}</text>`).join('');
+  const lim = budget > 0 ? `<line x1="${L}" x2="${W - R}" y1="${y(budget).toFixed(1)}" y2="${y(budget).toFixed(1)}" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 4" opacity=".8"/>` : '';
+  $('#limLegend').hidden = !(budget > 0);
+  const end = cur.length ? `<circle cx="${x(cur.length).toFixed(1)}" cy="${y(nowV).toFixed(1)}" r="4.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2"/>` : '';
+  $('#trendSvg').innerHTML = `${ticks}${xt}${lim}
+    ${hasPrev ? `<path d="${line(prev)}" fill="none" stroke="var(--muted)" stroke-opacity=".55" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>` : ''}
+    ${cur.length ? `<path d="${line(cur)}" fill="none" stroke="var(--accent)" stroke-width="2.25" stroke-linejoin="round" stroke-linecap="round"/>` : ''}
+    ${end}<g id="trendHover" style="display:none"><line id="thLine" y1="${T}" y2="${H - B}" stroke="var(--fg)" stroke-opacity=".35" stroke-width="1"/><circle id="thCur" r="4" fill="var(--accent)" stroke="var(--surface)" stroke-width="2"/><circle id="thPrev" r="4" fill="var(--muted)" stroke="var(--surface)" stroke-width="2"/></g>
+    <rect x="${L}" y="0" width="${W - L - R}" height="${H}" fill="transparent" id="trendHit"/>`;
+  trendData = { cur, prev, hasPrev, x, y, maxDays, W, p, prevP };
+
+  // categories that moved most compared with the same point last month
+  const nowCat = spendByCatUpTo(p, elapsed), thenCat = spendByCatUpTo(prevP, Math.min(elapsed, prevDays));
+  const ids = new Set([...Object.keys(nowCat), ...Object.keys(thenCat)]);
+  const movers = [...ids].map(id => ({ c: catById(id), now: nowCat[id] || 0, then: thenCat[id] || 0 })).map(m => ({ ...m, d: m.now - m.then }))
+    .filter(m => Math.abs(m.d) >= 1).sort((a, b) => Math.abs(b.d) - Math.abs(a.d)).slice(0, 4);
+  $('#moverList').hidden = !hasPrev || !movers.length;
+  $('#moverList').innerHTML = movers.map(m => `<button class="row mover" data-filter="${m.c.id}">${dot(m.c)}<div class="main"><span class="title">${esc(m.c.name)}</span>
+    <span class="sub">${money(m.now, { round: true })} so far · ${money(m.then, { round: true })} by now in ${prevP.short}</span></div>
+    <span class="chg ${m.d > 0 ? 'up' : 'down'}">${m.d > 0 ? '↑' : '↓'} ${money(Math.abs(m.d), { round: true })}</span></button>`).join('');
+}
+function trendHover(e) {
+  const svg = $('#trendSvg'), td = trendData; if (!td) return;
+  const box = svg.getBoundingClientRect(); const sx = (e.clientX - box.left) / box.width * td.W;
+  const L = 38, R = 10; const d = Math.max(1, Math.min(td.maxDays, Math.round((sx - L) / (td.W - L - R) * (td.maxDays - 1)) + 1));
+  const c = td.cur[d - 1], pv = td.hasPrev ? td.prev[d - 1] : undefined;
+  if (c === undefined && pv === undefined) return trendLeave();
+  const g = $('#trendHover'); g.style.display = '';
+  $('#thLine').setAttribute('x1', td.x(d)); $('#thLine').setAttribute('x2', td.x(d));
+  const pc = $('#thCur'), pp = $('#thPrev');
+  pc.style.display = c === undefined ? 'none' : ''; if (c !== undefined) { pc.setAttribute('cx', td.x(d)); pc.setAttribute('cy', td.y(c)); }
+  pp.style.display = pv === undefined ? 'none' : ''; if (pv !== undefined) { pp.setAttribute('cx', td.x(d)); pp.setAttribute('cy', td.y(pv)); }
+  const tip = $('#trendTip'); tip.hidden = false;
+  tip.innerHTML = `Day ${d}${c !== undefined ? ` · ${esc(td.p.short)} <b>${esc(money(c, { round: true }))}</b>` : ''}${pv !== undefined ? ` · ${esc(td.prevP.short)} ${esc(money(pv, { round: true }))}` : ''}`;
+  const px = td.x(d) / td.W * box.width; const half = tip.offsetWidth / 2;
+  tip.style.left = Math.max(half, Math.min(box.width - half, px)) + 'px';
+}
+function trendLeave() { const g = $('#trendHover'); if (g) g.style.display = 'none'; $('#trendTip').hidden = true; }
+
 function bigMoney(n) {
   const s = money(n); const i = s.lastIndexOf('.');
   if (i < 0 || n >= 1000) return esc(money(n, { round: true }));
@@ -1096,6 +1253,11 @@ $('#quickForm').addEventListener('submit', e => {
   $('#quickInput').value = ''; updateHint(); addTx(p);
 });
 $('#search').addEventListener('input', () => render());
+$('#trendSvg').addEventListener('pointermove', trendHover);
+$('#trendSvg').addEventListener('pointerdown', trendHover);
+$('#trendSvg').addEventListener('pointerleave', trendLeave);
+$('#pieLegend').addEventListener('pointerover', e => { const b = e.target.closest('[data-pieleg]'); $$('#pie [data-pie]').forEach(c => c.style.opacity = b && c.dataset.pie !== b.dataset.pieleg ? '.35' : ''); });
+$('#pieLegend').addEventListener('pointerleave', () => $$('#pie [data-pie]').forEach(c => c.style.opacity = ''));
 function renderAppearanceControls() {
   $$('#themeSeg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.themeOpt === (S.theme || 'system')));
   const dark = (document.documentElement.getAttribute('data-theme') || (mqDark.matches ? 'dark' : 'light')) === 'dark';
