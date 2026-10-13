@@ -222,6 +222,9 @@ section { display: flex; flex-direction: column; gap: 10px }
 .btn.danger { background: color-mix(in srgb, var(--bad) 14%, transparent); color: var(--bad); flex: 0 0 auto; padding-inline: 18px }
 .settings-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line) }
 .settings-row select { background: var(--surface-2); border: 0; border-radius: 10px; padding: 8px 10px }
+.install-steps { margin: 0; padding-left: 20px; display: grid; gap: 8px; line-height: 1.45 }
+.install-steps b { font-weight: 600 }
+.install-for { font-weight: 600; margin: 4px 0 6px }
 .sheet h3 { margin: 0; font: 700 20px/1.2 var(--display) }
 .small { font-size: 12.5px; color: var(--muted) }
 textarea.csv { width: 100%; height: 110px; font: 12px/1.4 ui-monospace, monospace; background: var(--surface-2); border: 0; border-radius: 12px; padding: 10px }
@@ -293,7 +296,7 @@ textarea.csv { width: 100%; height: 110px; font: 12px/1.4 ui-monospace, monospac
       <button class="icon-btn" id="nextM" aria-label="Next month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>
     </div>
     <div style="display:flex;align-items:center;gap:2px"><span class="sync" id="syncDot" hidden></span>
-    <button class="icon-btn" id="openSettings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button></div>
+    <button class="icon-btn" id="openSettings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></div>
   </header>
 
   <!-- HOME -->
@@ -434,6 +437,7 @@ textarea.csv { width: 100%; height: 110px; font: 12px/1.4 ui-monospace, monospac
   <div class="grab"></div>
   <h3>Settings</h3>
   <div class="settings-row" id="accountRow" hidden></div>
+  <div class="settings-row"><span>Get the app<br><span class="small" id="installSub">Install Tally on this device</span></span><button class="btn" style="flex:0 0 auto;padding:10px 16px" id="installBtn">Install</button></div>
   <div class="settings-row"><span>Theme</span>
     <div class="seg mini" role="group" aria-label="Theme" id="themeSeg"><button data-theme-opt="system">Auto</button><button data-theme-opt="light">Light</button><button data-theme-opt="dark">Dark</button></div>
   </div>
@@ -495,6 +499,15 @@ textarea.csv { width: 100%; height: 110px; font: 12px/1.4 ui-monospace, monospac
     <button class="btn" id="setupDone" type="button">Start tracking</button>
     <button class="link muted" id="setupSkip" type="button">Skip for now</button>
   </div>
+</div>
+
+<!-- INSTALL SHEET -->
+<div class="sheet" id="installSheet" role="dialog" aria-label="Install Tally">
+  <div class="grab"></div>
+  <h3>Install Tally</h3>
+  <div class="small">Tally installs straight from your browser, no App Store needed. It gets its own icon and window, and works offline.</div>
+  <div id="installSteps"></div>
+  <button class="btn ghost" data-close>Done</button>
 </div>
 
 <!-- EXPORT SHEET -->
@@ -1338,6 +1351,38 @@ window.Ledger = {
   closeSheets: () => closeSheets(),
 };
 if (!window.PWA_MODE) $('#dlCsv').hidden = true;
+
+// ---------- install ----------
+const APP_URL = 'https://ishaan12389012.github.io/Tally/';
+let installEvt = null;
+const isInstalled = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+function installSteps() {
+  const ua = navigator.userAgent, ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  const safari = /Safari/.test(ua) && !/Chrome|Chromium|CriOS|FxiOS|Edg|OPR/.test(ua);
+  const edge = /Edg\//.test(ua), firefox = /Firefox|FxiOS/.test(ua);
+  const ol = (title, steps) => `<div class="install-for">${title}</div><ol class="install-steps">${steps.map(x => `<li>${x}</li>`).join('')}</ol>`;
+  if (!window.PWA_MODE) return ol('Open the app site first', [`Go to <b>${esc(APP_URL)}</b> in Safari, Chrome or Edge.`, 'Open Settings there and tap <b>Install</b>.']);
+  if (ios) return ol('On iPhone or iPad', ['Tap the <b>Share</b> button in Safari (the square with an arrow).', 'Scroll down and tap <b>Add to Home Screen</b>.', 'Tap <b>Add</b>. Tally appears on your home screen.']);
+  if (safari) return ol('On Mac (Safari)', ['In the menu bar, choose <b>File</b> then <b>Add to Dock</b>.', 'Click <b>Add</b>. Tally appears in your Dock and Launchpad.']);
+  if (firefox) return ol('Firefox can\'t install apps', [`Open <b>${esc(APP_URL)}</b> in Safari, Chrome or Edge instead.`, 'Then come back here and tap <b>Install</b>.']);
+  return ol(edge ? 'In Edge' : 'In Chrome', [`Click the install icon at the right end of the address bar, or open the <b>${edge ? '⋯' : '⋮'}</b> menu and choose ${edge ? '<b>Apps</b> then <b>Install Tally</b>' : '<b>Cast, save and share</b> then <b>Install page as app</b>'}.`, 'Click <b>Install</b>. Tally opens in its own window and shows up with your other apps.']);
+}
+function renderInstallRow() {
+  const done = isInstalled();
+  $('#installSub').textContent = done ? 'Installed on this device' : 'Install Tally on this device';
+  $('#installBtn').hidden = done;
+}
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; });
+window.addEventListener('appinstalled', () => { installEvt = null; renderInstallRow(); toast('Tally installed'); });
+$('#installBtn').addEventListener('click', async () => {
+  if (installEvt) {
+    installEvt.prompt();
+    try { await installEvt.userChoice; } catch (err) {}
+    installEvt = null; renderInstallRow(); return;
+  }
+  $('#installSteps').innerHTML = installSteps(); openSheet('#installSheet');
+});
+$('#openSettings').addEventListener('click', renderInstallRow);
 render();
 if (location.hash === '#add' && S.setupDone) openAdd();
 if ('serviceWorker' in navigator && window.PWA_MODE) { try { navigator.serviceWorker.register('sw.js'); } catch (e) {} }
