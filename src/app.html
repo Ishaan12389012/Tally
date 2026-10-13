@@ -712,7 +712,6 @@ function renderHome(p) {
   const days = Math.round((p.end - p.start) / 864e5);
   const isCur = viewOffset === 0;
   const elapsed = isCur ? Math.min(days, Math.floor((now - p.start) / 864e5) + 1) : days;
-  const remainingDays = Math.max(1, days - elapsed + 1);
 
   $('#heroLabel').textContent = isCur ? `Spending ${PW().cur}` : (weekly() ? `Spending ${p.label}` : `Spending in ${p.label}`);
   $('#heroAmt').innerHTML = bigMoney(out);
@@ -733,7 +732,7 @@ function renderHome(p) {
     $('#leftWord').textContent = left < 0 ? 'over' : 'left';
     $('#budgetLine').textContent = money(budget, { round: true });
     $('#spentOf').hidden = false; $('#budgetWrap').hidden = false;
-    $('#perDay').innerHTML = isCur && left > 0 ? `<strong class="num">${money(left / remainingDays, { round: true })}</strong>/day for ${remainingDays} day${remainingDays > 1 ? 's' : ''}` : '';
+    $('#perDay').innerHTML = '';
   } else {
     $('#pacePill').hidden = true;
     $('#spentOf').hidden = true; $('#budgetWrap').hidden = true;
