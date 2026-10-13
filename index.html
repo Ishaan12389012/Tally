@@ -53,7 +53,8 @@ button { cursor: pointer; border: 0; background: none; padding: 0 }
 .app { max-width: 520px; margin: 0 auto; padding-inline: 16px; padding-block: 12px 120px; display: flex; flex-direction: column; gap: 18px }
 .top { display: flex; align-items: center; justify-content: space-between; gap: 8px }
 .month { display: flex; align-items: center; gap: 4px }
-.month h1 { margin: 0; font: 700 22px/1.1 var(--display); letter-spacing: -.02em; min-width: 9ch; text-align: center }
+.month h1 { margin: 0; font: 700 22px/1.1 var(--display); letter-spacing: -.02em; min-width: 9ch; text-align: center; white-space: nowrap }
+.month h1.range { font-size: 19px }
 .icon-btn { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; color: var(--muted) }
 .icon-btn:hover { background: var(--surface-2); color: var(--fg) }
 .icon-btn svg { width: 20px; height: 20px }
@@ -250,6 +251,7 @@ textarea.csv { width: 100%; height: 110px; font: 12px/1.4 ui-monospace, monospac
 .seg.mini { width: auto; grid-template-columns: repeat(3, auto) } .seg.mini button { padding: 6px 12px; font-size: 13px }
 .seg button[aria-pressed="true"] { background: var(--surface); color: var(--fg) }
 .settings-row.col { flex-direction: column; align-items: stretch }
+.seg.mini.two { grid-template-columns: repeat(2, auto) }
 .swatches { display: flex; flex-wrap: wrap; gap: 10px }
 .swatch { width: 34px; height: 34px; border-radius: 50%; border: 3px solid var(--surface); box-shadow: 0 0 0 1.5px var(--line); position: relative }
 .swatch[aria-pressed="true"] { box-shadow: 0 0 0 2.5px var(--fg) }
@@ -345,11 +347,11 @@ textarea.csv { width: 100%; height: 110px; font: 12px/1.4 ui-monospace, monospac
     </section>
 
     <section id="trendSec">
-      <div class="sec-head"><h2>Spending trends</h2><button class="link" data-go="plan">6-month view</button></div>
+      <div class="sec-head"><h2>Spending trends</h2><button class="link" data-go="plan" id="planLink">6-month view</button></div>
       <div class="trend-card">
         <div class="trend-head"><strong id="trendHeadline"></strong><span class="small" id="trendSub"></span></div>
         <div class="trend-legend" aria-hidden="true"><span><i class="sw cur"></i><span id="curLegend">This month</span></span><span><i class="sw prev"></i><span id="prevLegend">Last month</span></span><span id="limLegend"><i class="sw lim"></i>Limit</span></div>
-        <div class="trend-chart"><div class="trend-tip" id="trendTip" hidden></div><svg id="trendSvg" viewBox="0 0 320 160" role="img" aria-label="Running total of spending this month compared with last month"></svg></div>
+        <div class="trend-chart"><div class="trend-tip" id="trendTip" hidden></div><svg id="trendSvg" viewBox="0 0 320 160" role="img" aria-label="Running total of spending this period compared with the one before"></svg></div>
       </div>
       <div class="list" id="moverList"></div>
     </section>
@@ -380,14 +382,14 @@ textarea.csv { width: 100%; height: 110px; font: 12px/1.4 ui-monospace, monospac
   <!-- PLAN -->
   <div class="view" id="view-plan" hidden>
     <section>
-      <div class="sec-head"><h2>Last 6 months</h2><span class="small">Spending</span></div>
+      <div class="sec-head"><h2 id="planChartTitle">Last 6 months</h2><span class="small">Spending</span></div>
       <div class="chart" id="chart"></div>
       <div class="insight" id="insight"></div>
     </section>
     <section>
       <div class="sec-head"><h2>Categories &amp; limits</h2><span class="small num" id="budgetTotal"></span></div>
       <div class="list" id="budgetList"></div>
-      <div class="small">Limits repeat every month. Tap a category to rename it, change its colour or change its limit.</div>
+      <div class="small"><span id="limitsRepeat">Limits repeat every month.</span> Tap a category to rename it, change its colour or change its limit.</div>
     </section>
   </div>
 </div>
@@ -450,7 +452,10 @@ textarea.csv { width: 100%; height: 110px; font: 12px/1.4 ui-monospace, monospac
       <option value="JPY">¥ Japanese yen</option><option value="SGD">$ Singapore dollar</option><option value="AED">AED UAE dirham</option>
     </select>
   </div>
-  <div class="settings-row"><span>Month starts on day</span>
+  <div class="settings-row"><span>Budget period<br><span class="small" id="periodSub"></span></span>
+    <div class="seg mini two" role="group" aria-label="Budget period" id="periodSeg"><button data-period-opt="month">Monthly</button><button data-period-opt="week">Weekly</button></div>
+  </div>
+  <div class="settings-row" id="startDayRow"><span>Month starts on day</span>
     <select id="startDaySel"></select>
   </div>
   <div class="settings-row"><span>Import from a spreadsheet<br><span class="small">CSV with date, amount, category, note</span></span>
@@ -582,7 +587,7 @@ function guessCurrency() {
   } catch (e) {}
   return 'USD';
 }
-const freshState = (currency = guessCurrency()) => ({ v: 2, currency, startDay: 1, cats: [], setupDone: false, txns: [], accent: 'cobalt', theme: 'system' });
+const freshState = (currency = guessCurrency()) => ({ v: 2, currency, startDay: 1, period: 'month', cats: [], setupDone: false, txns: [], accent: 'cobalt', theme: 'system' });
 // v1 had fixed categories and example data; keep real entries, drop the examples
 const V1_CATS = { groceries: ['Groceries', 0], eating: ['Eating out', 1], transport: ['Transport', 2], bills: ['Rent & bills', 3], shopping: ['Shopping', 4],
   fun: ['Fun', 5], health: ['Health', 6], subs: ['Subscriptions', 7], other: ['Other', 15] };
@@ -601,7 +606,7 @@ function load() {
   return freshState();
 }
 let snap = new Map(), snapSettings = '';
-const prefs = () => ({ categories: S.cats, setupDone: !!S.setupDone, accent: S.accent, theme: S.theme });
+const prefs = () => ({ categories: S.cats, setupDone: !!S.setupDone, accent: S.accent, theme: S.theme, period: S.period || 'month' });
 const settingsJSON = () => JSON.stringify([S.currency, S.startDay, prefs()]);
 function snapshot() { snap = new Map(S.txns.map(t => [t.id, JSON.stringify(t)])); snapSettings = settingsJSON(); }
 function persist() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
@@ -659,7 +664,23 @@ const dot = (c, sm, extra = '') => `<span class="dot${sm ? ' sm' : ''}" style="b
 
 // ---------- period (supports custom month start day, e.g. payday) ----------
 let viewOffset = 0; // 0 = current period
+const weekly = () => S.period === 'week';
+// words that change with the budget period
+const PW = () => weekly()
+  ? { unit: 'week', ly: 'Weekly', cur: 'this week', last: 'last week', a: 'a week', n: '6 weeks' }
+  : { unit: 'month', ly: 'Monthly', cur: 'this month', last: 'last month', a: 'a month', n: '6 months' };
+const DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+function weekFor(offset) {
+  const now = new Date(); const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (now.getDay() + 6) % 7 + offset * 7);
+  const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 7); // end exclusive
+  const last = new Date(end.getFullYear(), end.getMonth(), end.getDate() - 1);
+  const m = d => MONTHS[d.getMonth()].slice(0, 3);
+  const yr = last.getFullYear() !== now.getFullYear() ? ' ' + last.getFullYear() : '';
+  const label = start.getMonth() === last.getMonth() ? `${start.getDate()} – ${last.getDate()} ${m(last)}${yr}` : `${start.getDate()} ${m(start)} – ${last.getDate()} ${m(last)}${yr}`;
+  return { start, end, label, short: `${start.getDate()} ${m(start)}` };
+}
 function periodFor(offset) {
+  if (weekly()) return weekFor(offset);
   const sd = S.startDay || 1; const now = new Date();
   let y = now.getFullYear(), m = now.getMonth();
   if (now.getDate() < sd) m -= 1;
@@ -687,6 +708,8 @@ function render() {
   const p = periodFor(viewOffset);
   $('#monthLabel').textContent = p.label;
   $('#nextM').style.visibility = viewOffset >= 0 ? 'hidden' : 'visible';
+  $('#prevM').setAttribute('aria-label', 'Previous ' + PW().unit); $('#nextM').setAttribute('aria-label', 'Next ' + PW().unit);
+  $('#monthLabel').classList.toggle('range', weekly());
   $$('.view[id^=view-]').forEach(v => v.hidden = v.id !== 'view-' + tab);
   $$('.tab[data-tab]').forEach(b => b.dataset.tab === tab ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
   if (tab === 'home') renderHome(p);
@@ -709,7 +732,7 @@ function renderHome(p) {
   const elapsed = isCur ? Math.min(days, Math.floor((now - p.start) / 864e5) + 1) : days;
   const remainingDays = Math.max(1, days - elapsed + 1);
 
-  $('#heroLabel').textContent = isCur ? 'Spending this month' : `Spending in ${p.label}`;
+  $('#heroLabel').textContent = isCur ? `Spending ${PW().cur}` : (weekly() ? `Spending ${p.label}` : `Spending in ${p.label}`);
   $('#heroAmt').innerHTML = bigMoney(out);
   renderPie(tx, out);
   $('#meterToday').hidden = true;
@@ -732,7 +755,7 @@ function renderHome(p) {
   } else {
     $('#pacePill').hidden = true;
     $('#spentOf').hidden = true; $('#budgetWrap').hidden = true;
-    $('#perDay').innerHTML = `<button class="link" data-act="${S.cats.length ? 'plan' : 'setup'}">Set monthly limits</button>`;
+    $('#perDay').innerHTML = `<button class="link" data-act="${S.cats.length ? 'plan' : 'setup'}">Set ${PW().unit}ly limits</button>`;
   }
   $('#statIn').textContent = money(inc, { round: true });
   $('#statOut').textContent = money(out, { round: true });
@@ -761,7 +784,7 @@ function renderHome(p) {
     return `<button class="row cat-row" data-filter="${c.id}">${dot(c)}<div class="main"><span class="title">${esc(c.name)}</span>
       <div class="bar"><i style="width:${w}%;background:${over ? 'var(--bad)' : c.color}"></i></div></div>
       <div class="right"><span class="amt num">${money(sp, { round: true })}</span><span class="sub ${over ? 'over' : ''}">${b ? (over ? money(sp - b, { round: true }) + ' over' : money(b - sp, { round: true }) + ' left') : 'no limit'}</span></div></button>`;
-  }).join('') : `<div class="prompt-card"><strong>Make your first category</strong><span class="small">Group your spending, like Groceries or Rent, and give each one a monthly limit.</span><button class="btn" data-act="setup">Set up categories</button></div>`;
+  }).join('') : `<div class="prompt-card"><strong>Make your first category</strong><span class="small">Group your spending, like Groceries or Rent, and give each one a ${PW().unit}ly limit.</span><button class="btn" data-act="setup">Set up categories</button></div>`;
   $('#catList').classList.toggle('list', S.cats.length > 0);
 
   // savings & investments: progress towards each monthly target
@@ -801,7 +824,7 @@ function renderPie(tx, out) {
   $('#pieLegend').innerHTML = items.length ? items.map((it, i) => `<li><button ${it.c.id ? `data-filter="${it.c.id}"` : 'data-go="activity"'} data-pieleg="${i}">
       <span class="sw" style="background:${it.c.color}"></span><span class="nm">${esc(it.c.name)}</span>
       <span class="v">${money(it.v, { round: true })}<small>${Math.round(it.v / out * 100)}%</small></span></button></li>`).join('')
-    : `<li class="empty-note">Nothing spent yet this month. Log a purchase and it shows up here.</li>`;
+    : `<li class="empty-note">Nothing spent yet ${PW().cur}. Log a purchase and it shows up here.</li>`;
 }
 
 // ---------- trends: running total vs last month, biggest category changes ----------
@@ -823,17 +846,22 @@ function renderTrends(p, elapsed, days, budget) {
   const prevDays = Math.round((prevP.end - prevP.start) / 864e5);
   const cur = cumulative(p, elapsed), prev = cumulative(prevP, prevDays);
   const hasPrev = prev.length && prev[prev.length - 1] > 0;
-  $('#curLegend').textContent = viewOffset === 0 ? 'This month' : p.short;
-  $('#prevLegend').textContent = viewOffset === 0 ? 'Last month' : prevP.short;
+  const w = PW(), wk = weekly();
+  $('#planLink').textContent = wk ? '6-week view' : '6-month view';
+  const cap = t => t[0].toUpperCase() + t.slice(1);
+  const prevName = viewOffset === 0 ? w.last : wk ? `the week of ${prevP.short}` : prevP.short;
+  const dayName = d => wk ? DOW[d - 1] : `day ${d}`;
+  $('#curLegend').textContent = viewOffset === 0 ? cap(w.cur) : wk ? `Week of ${p.short}` : p.short;
+  $('#prevLegend').textContent = viewOffset === 0 ? cap(w.last) : wk ? `Week of ${prevP.short}` : prevP.short;
   // headline: where you are vs the same day last month
   const nowV = cur[cur.length - 1] || 0, thenV = prev[Math.min(elapsed, prevDays) - 1] || 0, diff = nowV - thenV;
   const h = $('#trendHeadline'); h.className = '';
-  if (!hasPrev) { h.textContent = nowV ? `${money(nowV, { round: true })} spent so far` : 'No spending yet'; $('#trendSub').textContent = 'Trends fill in once you have a month of history.'; }
-  else if (Math.abs(diff) < 1) { h.textContent = 'About the same as last month'; $('#trendSub').textContent = `${money(nowV, { round: true })} by day ${elapsed}, same as ${prevP.short}.`; }
+  if (!hasPrev) { h.textContent = nowV ? `${money(nowV, { round: true })} spent so far` : 'No spending yet'; $('#trendSub').textContent = `Trends fill in once you have ${w.a} of history.`; }
+  else if (Math.abs(diff) < 1) { h.textContent = `About the same as ${w.last}`; $('#trendSub').textContent = `${money(nowV, { round: true })} by ${dayName(elapsed)}, same as ${prevName}.`; }
   else {
     h.className = diff > 0 ? 'up' : 'down';
-    h.textContent = `${diff > 0 ? '↑' : '↓'} ${money(Math.abs(diff), { round: true })} ${diff > 0 ? 'more' : 'less'} than this point last month`;
-    $('#trendSub').textContent = `${money(nowV, { round: true })} by day ${elapsed}, against ${money(thenV, { round: true })} in ${prevP.short}.`;
+    h.textContent = `${diff > 0 ? '↑' : '↓'} ${money(Math.abs(diff), { round: true })} ${diff > 0 ? 'more' : 'less'} than this point ${w.last}`;
+    $('#trendSub').textContent = `${money(nowV, { round: true })} by ${dayName(elapsed)}, against ${money(thenV, { round: true })} ${viewOffset === 0 && !wk ? 'in ' + prevP.short : prevName}.`;
   }
   // nothing to draw yet: keep just the headline
   const empty = !nowV && !hasPrev;
@@ -847,7 +875,7 @@ function renderTrends(p, elapsed, days, budget) {
   const y = v => T + (1 - v / maxV) * (H - T - B);
   const line = arr => arr.map((v, i) => `${i ? 'L' : 'M'}${x(i + 1).toFixed(1)},${y(v).toFixed(1)}`).join('');
   const ticks = [0, maxV / 2, maxV].map(v => `<line class="grid" x1="${L}" x2="${W - R}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/><text class="ax" x="${L - 6}" y="${(y(v) + 3).toFixed(1)}" text-anchor="end">${esc(compact(v) === '–' ? sym().trim() + '0' : compact(v))}</text>`).join('');
-  const xt = [1, Math.round(maxDays / 2), maxDays].map(d => `<text class="ax" x="${x(d).toFixed(1)}" y="${H - 6}" text-anchor="${d === 1 ? 'start' : d === maxDays ? 'end' : 'middle'}">Day ${d}</text>`).join('');
+  const xt = (wk ? [1, 2, 3, 4, 5, 6, 7] : [1, Math.round(maxDays / 2), maxDays]).map(d => `<text class="ax" x="${x(d).toFixed(1)}" y="${H - 6}" text-anchor="${d === 1 ? 'start' : d === maxDays ? 'end' : 'middle'}">${wk ? DOW[d - 1] : 'Day ' + d}</text>`).join('');
   const lim = budget > 0 ? `<line x1="${L}" x2="${W - R}" y1="${y(budget).toFixed(1)}" y2="${y(budget).toFixed(1)}" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 4" opacity=".8"/>` : '';
   $('#limLegend').hidden = !(budget > 0);
   const end = cur.length ? `<circle cx="${x(cur.length).toFixed(1)}" cy="${y(nowV).toFixed(1)}" r="4.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2"/>` : '';
@@ -865,7 +893,7 @@ function renderTrends(p, elapsed, days, budget) {
     .filter(m => Math.abs(m.d) >= 1).sort((a, b) => Math.abs(b.d) - Math.abs(a.d)).slice(0, 4);
   $('#moverList').hidden = !hasPrev || !movers.length;
   $('#moverList').innerHTML = movers.map(m => `<button class="row mover" data-filter="${m.c.id}">${dot(m.c)}<div class="main"><span class="title">${esc(m.c.name)}</span>
-    <span class="sub">${money(m.now, { round: true })} so far · ${money(m.then, { round: true })} by now in ${prevP.short}</span></div>
+    <span class="sub">${money(m.now, { round: true })} so far · ${money(m.then, { round: true })} by now ${viewOffset === 0 && !wk ? 'in ' + prevP.short : prevName}</span></div>
     <span class="chg ${m.d > 0 ? 'up' : 'down'}">${m.d > 0 ? '↑' : '↓'} ${money(Math.abs(m.d), { round: true })}</span></button>`).join('');
 }
 function trendHover(e) {
@@ -880,7 +908,8 @@ function trendHover(e) {
   pc.style.display = c === undefined ? 'none' : ''; if (c !== undefined) { pc.setAttribute('cx', td.x(d)); pc.setAttribute('cy', td.y(c)); }
   pp.style.display = pv === undefined ? 'none' : ''; if (pv !== undefined) { pp.setAttribute('cx', td.x(d)); pp.setAttribute('cy', td.y(pv)); }
   const tip = $('#trendTip'); tip.hidden = false;
-  tip.innerHTML = `Day ${d}${c !== undefined ? ` · ${esc(td.p.short)} <b>${esc(money(c, { round: true }))}</b>` : ''}${pv !== undefined ? ` · ${esc(td.prevP.short)} ${esc(money(pv, { round: true }))}` : ''}`;
+  const wk = weekly(), curN = wk ? (viewOffset === 0 ? 'This week' : 'This') : td.p.short, prevN = wk ? 'last' : td.prevP.short;
+  tip.innerHTML = `${wk ? DOW[d - 1] : 'Day ' + d}${c !== undefined ? ` · ${esc(curN)} <b>${esc(money(c, { round: true }))}</b>` : ''}${pv !== undefined ? ` · ${esc(prevN)} ${esc(money(pv, { round: true }))}` : ''}`;
   const px = td.x(d) / td.W * box.width; const half = tip.offsetWidth / 2;
   tip.style.left = Math.max(half, Math.min(box.width - half, px)) + 'px';
 }
@@ -922,10 +951,12 @@ function renderActivity(p) {
   $('#activityList').innerHTML = Object.keys(groups).length ? Object.entries(groups).map(([d, list]) => {
     const spent = sum(list.filter(isSpend));
     return `<div class="day-head"><span>${relDay(d)}</span><span class="num">${spent ? money(spent) + ' spent' : ''}</span></div><div class="list">${list.map(txRow).join('')}</div>`;
-  }).join('') : `<div class="empty">${q || filterCat ? 'No matches this month.' : 'No transactions this month.'}</div>`;
+  }).join('') : `<div class="empty">${q || filterCat ? `No matches ${PW().cur}.` : `No transactions ${PW().cur}.`}</div>`;
 }
 
 function renderPlan() {
+  const w = PW();
+  $('#planChartTitle').textContent = 'Last ' + w.n; $('#limitsRepeat').textContent = `Limits repeat every ${w.unit}.`;
   const cols = [];
   for (let o = -5; o <= 0; o++) {
     const p = periodFor(o + viewOffset);
@@ -940,13 +971,13 @@ function renderPlan() {
   for (let o = -5; o < 0; o++) txIn(periodFor(o + viewOffset)).filter(t => t.type === 'out').forEach(t => catAvg[t.cat] = (catAvg[t.cat] || 0) + t.amt / 5);
   txIn(cur.p).filter(t => t.type === 'out').forEach(t => catCur[t.cat] = (catCur[t.cat] || 0) + t.amt);
   const topCat = Object.entries(catCur).filter(([id]) => !isSaveCat(catById(id))).sort((a, b) => b[1] - a[1])[0];
-  let txt = avg ? `You usually spend <strong class="num">${money(avg, { round: true })}</strong> a month. ` : '';
-  if (topCat) txt += `Your biggest category in ${cur.p.label.split(' ')[0]} is <strong>${esc(catById(topCat[0]).name)}</strong> at <strong class="num">${money(topCat[1], { round: true })}</strong>${catAvg[topCat[0]] ? `, against a typical <span class="num">${money(catAvg[topCat[0]], { round: true })}</span>` : ''}.`;
+  let txt = avg ? `You usually spend <strong class="num">${money(avg, { round: true })}</strong> ${w.a}. ` : '';
+  if (topCat) txt += `Your biggest category ${viewOffset === 0 ? w.cur : weekly() ? 'that week' : 'in ' + cur.p.label.split(' ')[0]} is <strong>${esc(catById(topCat[0]).name)}</strong> at <strong class="num">${money(topCat[1], { round: true })}</strong>${catAvg[topCat[0]] ? `, against a typical <span class="num">${money(catAvg[topCat[0]], { round: true })}</span>` : ''}.`;
   $('#insight').innerHTML = txt || 'Add a few transactions and patterns will show up here.';
 
-  $('#budgetTotal').textContent = totalBudget() ? money(totalBudget(), { round: true }) + ' / month' : '';
+  $('#budgetTotal').textContent = totalBudget() ? money(totalBudget(), { round: true }) + ' / ' + w.unit : '';
   const planRow = c => `<button class="row" data-editcat="${c.id}">${dot(c)}<div class="main"><span class="title">${esc(c.name)}</span>
-    <span class="sub">${money(catCur[c.id] || 0, { round: true })} ${isSaveCat(c) ? 'put aside' : 'spent'} this month${catAvg[c.id] ? ` · avg ${money(catAvg[c.id], { round: true })}` : ''}</span></div>
+    <span class="sub">${money(catCur[c.id] || 0, { round: true })} ${isSaveCat(c) ? 'put aside' : 'spent'} ${w.cur}${catAvg[c.id] ? ` · avg ${money(catAvg[c.id], { round: true })}` : ''}</span></div>
     <span class="amt num" style="${+c.limit ? '' : 'color:var(--muted);font-weight:500'}">${+c.limit ? money(+c.limit, { auto: true }) : (isSaveCat(c) ? 'No target' : 'No limit')}</span></button>`;
   const sc = saveCats();
   $('#budgetList').innerHTML = spendCats().map(planRow).join('') +
@@ -969,7 +1000,7 @@ function renderSetup() {
   $('#setupList').innerHTML = setupDraft.map((c, i) => `<div class="setup-row">${dot(c, 0, `data-cycle="${i}" role="button" tabindex="0" aria-label="Change colour"`)}
     <input class="nm" data-sname="${i}" value="${esc(c.name)}" maxlength="24" aria-label="Category name">
     <button type="button" class="kind ${isSaveCat(c) ? 'on' : ''}" data-skind="${i}" aria-pressed="${isSaveCat(c)}" title="Savings or investments don't count as spending">${isSaveCat(c) ? 'Saving' : 'Spend'}</button>
-    <input class="lim num" data-slimit="${i}" value="${+c.limit || ''}" placeholder="${esc(sym().trim())} ${isSaveCat(c) ? 'target' : 'limit'}" inputmode="decimal" aria-label="${esc(c.name)} monthly ${isSaveCat(c) ? 'target' : 'limit'}">
+    <input class="lim num" data-slimit="${i}" value="${+c.limit || ''}" placeholder="${esc(sym().trim())} ${isSaveCat(c) ? 'target' : 'limit'}" inputmode="decimal" aria-label="${esc(c.name)} ${PW().unit}ly ${isSaveCat(c) ? 'target' : 'limit'}">
     <button type="button" class="x" data-sremove="${i}" aria-label="Remove ${esc(c.name)}">×</button></div>`).join('');
   updateSetupTotal();
 }
@@ -1010,7 +1041,7 @@ function openCatEditor(id, returnToAdd) {
 function renderCatKind() {
   $$('#catKind button').forEach(b => b.setAttribute('aria-pressed', b.dataset.kind === catEdit.kind));
   const save = catEdit.kind === 'save';
-  $('#catLimitLabel').textContent = save ? 'Monthly target' : 'Monthly limit';
+  $('#catLimitLabel').textContent = `${PW().ly} ${save ? 'target' : 'limit'}`;
   $('#catLimit').placeholder = save ? 'No target' : 'No limit';
   $('#catKindNote').textContent = save ? 'Money you put here counts as saved, not spent.' : 'Counts towards your spending.';
 }
@@ -1225,6 +1256,7 @@ document.addEventListener('click', e => {
   if (el.dataset.skind !== undefined) { const c = setupDraft[+el.dataset.skind]; c.kind = isSaveCat(c) ? 'spend' : 'save'; return renderSetup(); }
   if (el.dataset.catcolor) { catEdit.color = el.dataset.catcolor; return renderCatSwatches(); }
   if (el.dataset.accent) { S.accent = el.dataset.accent; save(); applyAppearance(); return renderAppearanceControls(); }
+  if (el.dataset.periodOpt) { setPeriod(el.dataset.periodOpt); return renderPeriodControls(); }
   if (el.dataset.themeOpt) { S.theme = el.dataset.themeOpt; save(); applyAppearance(); return renderAppearanceControls(); }
   if (el.dataset.suggest) return addDraftCat(el.dataset.suggest, '', true);
   if (el.dataset.sremove !== undefined) { setupDraft.splice(+el.dataset.sremove, 1); return renderSetup(); }
@@ -1296,13 +1328,31 @@ function renderAppearanceControls() {
   const dark = (document.documentElement.getAttribute('data-theme') || (mqDark.matches ? 'dark' : 'light')) === 'dark';
   $('#accentSwatches').innerHTML = swatchHTML(Object.entries(ACCENTS).map(([k, v]) => [k, v[dark ? 1 : 0]]), S.accent, 'data-accent');
 }
+function renderPeriodControls() {
+  $$('#periodSeg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.periodOpt === (S.period || 'month')));
+  $('#startDayRow').hidden = weekly();
+  $('#periodSub').textContent = weekly() ? 'Monday to Sunday' : (S.startDay || 1) > 1 ? `From day ${S.startDay}` : 'Calendar month';
+}
+// switching keeps your budget the same size: limits are rescaled to the new period
+function setPeriod(next) {
+  if ((S.period || 'month') === next) return;
+  const f = next === 'week' ? 12 / 52 : 52 / 12;
+  S.cats.forEach(c => {
+    if (!+c.limit) return;
+    // switching straight back restores the exact limit you had, unless you edited it in between
+    const back = c.was && c.was.period === next && c.was.conv === +c.limit ? c.was.limit : Math.max(1, Math.round(c.limit * f));
+    c.was = { period: S.period || 'month', limit: +c.limit, conv: back }; c.limit = back;
+  });
+  S.period = next; viewOffset = 0; save(); render();
+  toast(next === 'week' ? 'Weekly budgets on. Limits converted to weekly amounts.' : 'Monthly budgets on. Limits converted to monthly amounts.');
+}
 $('#openSettings').addEventListener('click', () => {
   $('#currencySel').value = S.currency;
   $('#startDaySel').innerHTML = Array.from({ length: 28 }, (_, i) => `<option value="${i + 1}">${i + 1}${i === 0 ? ' (calendar month)' : ''}</option>`).join('');
-  $('#startDaySel').value = S.startDay || 1; renderAppearanceControls(); openSheet('#settingsSheet');
+  $('#startDaySel').value = S.startDay || 1; renderAppearanceControls(); renderPeriodControls(); openSheet('#settingsSheet');
 });
 $('#currencySel').addEventListener('change', e => { S.currency = e.target.value; save(); render(); });
-$('#startDaySel').addEventListener('change', e => { S.startDay = +e.target.value; viewOffset = 0; save(); render(); });
+$('#startDaySel').addEventListener('change', e => { S.startDay = +e.target.value; viewOffset = 0; save(); render(); renderPeriodControls(); });
 $('#eraseBtn').addEventListener('click', () => {
   if (!eraseArmed) { eraseArmed = true; $('#eraseConfirm').hidden = false; return; }
   S = { ...freshState(S.currency), accent: S.accent, theme: S.theme }; save(); closeSheets(); tab = 'home'; render(); toast('All data erased');
@@ -1342,7 +1392,7 @@ window.Ledger = {
     if (settings) {
       if (settings.currency) S.currency = settings.currency; if (settings.startDay) S.startDay = settings.startDay;
       const b = settings.budgets;
-      if (b && Array.isArray(b.categories)) { S.cats = b.categories; S.setupDone = b.setupDone !== false; if (b.accent) S.accent = b.accent; if (b.theme) S.theme = b.theme; }
+      if (b && Array.isArray(b.categories)) { S.cats = b.categories; S.setupDone = b.setupDone !== false; if (b.accent) S.accent = b.accent; if (b.theme) S.theme = b.theme; if (b.period) S.period = b.period; }
     }
     persist(); snapshot(); render();
   },
