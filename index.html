@@ -19,28 +19,28 @@
 <title>Tally</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600&display=swap">
 <style>
 /* Layout: one-column phone app. Summary card on top, a fast-entry bar, then detail. Fixed tab bar + floating add button. */
 :root {
-  --bg: #f2f3f7; --surface: #ffffff; --surface-2: #e9ebf1; --fg: #12141a; --muted: #5f6577; --line: #dde0e8;
-  --accent: #2f52f5; --accent-soft: #e3e8ff; --accent-ink: #ffffff;
-  --good: #11865a; --warn: #b87300; --bad: #cf3a3a;
-  --scrim: rgba(12, 14, 20, .38); --shadow: 0 10px 30px rgba(20, 26, 50, .12);
-  --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
-  --body: "Figtree", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --bg: #f4f1ea; --surface: #fcfbf8; --surface-2: #ece8df; --fg: #1f1e1c; --muted: #6e6a62; --line: #e3ded3;
+  --accent: #c96442; --accent-soft: #f6e6de; --accent-ink: #ffffff;
+  --good: #3a7d4f; --warn: #a86d0a; --bad: #b8423a;
+  --scrim: rgba(31, 30, 28, .36); --shadow: 0 1px 2px rgba(60, 50, 30, .06), 0 8px 24px rgba(60, 50, 30, .07);
+  --display: "Source Serif 4", "Iowan Old Style", Georgia, serif;
+  --body: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
   --r: 18px;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --bg: #0d0f14; --surface: #171a21; --surface-2: #222630; --fg: #eef0f6; --muted: #959cad; --line: #2a2f3a;
-  --accent: #8098ff; --accent-soft: #232a4a; --accent-ink: #0d0f14;
-  --good: #43d095; --warn: #f1b23f; --bad: #ff7070;
-  --scrim: rgba(0, 0, 0, .55); --shadow: 0 10px 30px rgba(0, 0, 0, .45); color-scheme: dark } }
+  --bg: #1f1e1d; --surface: #2a2927; --surface-2: #363431; --fg: #f2efe8; --muted: #a59f94; --line: #3b3936;
+  --accent: #e08a68; --accent-soft: #43312a; --accent-ink: #1f1e1d;
+  --good: #7fbf8c; --warn: #e2b05a; --bad: #ec8670;
+  --scrim: rgba(0, 0, 0, .55); --shadow: 0 10px 30px rgba(0, 0, 0, .35); color-scheme: dark } }
 :root[data-theme="dark"] {
-  --bg: #0d0f14; --surface: #171a21; --surface-2: #222630; --fg: #eef0f6; --muted: #959cad; --line: #2a2f3a;
-  --accent: #8098ff; --accent-soft: #232a4a; --accent-ink: #0d0f14;
-  --good: #43d095; --warn: #f1b23f; --bad: #ff7070;
-  --scrim: rgba(0, 0, 0, .55); --shadow: 0 10px 30px rgba(0, 0, 0, .45); color-scheme: dark }
+  --bg: #1f1e1d; --surface: #2a2927; --surface-2: #363431; --fg: #f2efe8; --muted: #a59f94; --line: #3b3936;
+  --accent: #e08a68; --accent-soft: #43312a; --accent-ink: #1f1e1d;
+  --good: #7fbf8c; --warn: #e2b05a; --bad: #ec8670;
+  --scrim: rgba(0, 0, 0, .55); --shadow: 0 10px 30px rgba(0, 0, 0, .35); color-scheme: dark }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent }
 html, body { height: 100% }
@@ -76,21 +76,23 @@ button { cursor: pointer; border: 0; background: none; padding: 0 }
 .meter > b { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--fg); border-radius: 2px; opacity: .55 }
 .hero-foot { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 13.5px; flex-wrap: wrap }
 .hero-foot strong { color: var(--fg); font-weight: 600 }
-.pie-wrap { display: flex; align-items: center; gap: 18px }
-.pie-box { position: relative; width: 150px; flex: none; max-width: 45% }
-.pie { width: 100%; height: auto; display: block }
-.pie circle { transition: stroke-dasharray .5s cubic-bezier(.2,.8,.2,1), stroke-dashoffset .5s cubic-bezier(.2,.8,.2,1) }
-.pie-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none }
-.pie-center .num { font-size: clamp(18px, 6vw, 26px); font-weight: 700; line-height: 1.1 }
-.pie-center .num .cents { font-size: .6em; color: var(--muted) }
-.pie-legend { list-style: none; margin: 0; padding: 0; flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px }
-.pie-legend button { display: grid; grid-template-columns: 10px 1fr auto; align-items: center; gap: 8px; width: 100%; padding: 5px 4px; border-radius: 8px; text-align: left; font-size: 13.5px }
+.pie-wrap { display: flex; flex-direction: column; align-items: center; gap: 16px; padding-top: 4px }
+.pie-box { position: relative; width: min(220px, 62vw); flex: none }
+.pie { width: 100%; height: auto; display: block; overflow: visible }
+.pie circle[data-pie] { transition: stroke-dasharray .6s cubic-bezier(.2,.8,.2,1), stroke-dashoffset .6s cubic-bezier(.2,.8,.2,1), opacity .2s }
+.pie-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; gap: 2px }
+.pie-center .num { font-size: clamp(26px, 8vw, 34px); font-weight: 600; line-height: 1.05; letter-spacing: -.02em }
+.pie-center .num .cents { font-size: .55em; color: var(--muted) }
+.pie-center .small { text-align: center; max-width: 70%; line-height: 1.3 }
+.pie-legend { list-style: none; margin: 0; padding: 0; width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px }
+.pie-legend li { min-width: 0 }
+.pie-legend button { display: grid; grid-template-columns: 10px 1fr auto; grid-template-rows: auto auto; column-gap: 8px; align-items: center; width: 100%; padding: 7px 8px; border-radius: 12px; text-align: left; font-size: 13.5px; transition: background .15s }
 .pie-legend button:hover, .pie-legend button.hl { background: var(--surface-2) }
-.pie-legend .sw { width: 10px; height: 10px; border-radius: 3px }
-.pie-legend .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0 }
-.pie-legend .v { font-family: var(--display); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap }
-.pie-legend .v small { color: var(--muted); font-weight: 500; margin-left: 4px; font-family: var(--body) }
-.pie-legend .empty-note { color: var(--muted); font-size: 13.5px; padding: 4px }
+.pie-legend .sw { width: 10px; height: 10px; border-radius: 50%; grid-row: 1 / 3 }
+.pie-legend .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; color: var(--muted); grid-column: 2 / 4 }
+.pie-legend .v { font-family: var(--display); font-weight: 600; font-size: 16px; font-variant-numeric: tabular-nums; white-space: nowrap; grid-column: 2 }
+.pie-legend .pc { color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; grid-column: 3; justify-self: end }
+.pie-legend .empty-note { color: var(--muted); font-size: 13.5px; padding: 4px; grid-column: 1 / -1; text-align: center }
 .budget-block { display: flex; flex-direction: column; gap: 10px }
 .trend-card { background: var(--surface); border-radius: var(--r); padding: 14px 14px 8px; display: flex; flex-direction: column; gap: 8px }
 .trend-head { display: flex; flex-direction: column; gap: 2px }
@@ -108,9 +110,6 @@ button { cursor: pointer; border: 0; background: none; padding: 0 }
 .trend-tip { position: absolute; top: 0; left: 0; transform: translateX(-50%); background: var(--fg); color: var(--bg); border-radius: 8px; padding: 5px 8px; font-size: 12px; line-height: 1.35; pointer-events: none; white-space: nowrap; z-index: 2 }
 .mover .chg { font-weight: 700; font-size: 14px; white-space: nowrap; font-family: var(--display) }
 .mover .chg.up { color: var(--bad) } .mover .chg.down { color: var(--good) }
-.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; border-top: 1px solid var(--line); padding-top: 14px }
-.stats div { display: flex; flex-direction: column; gap: 2px; min-width: 0 }
-.stats .num { font-size: clamp(14px, 4.2vw, 18px); font-weight: 700; overflow-wrap: anywhere }
 
 .quick { display: flex; gap: 8px; background: var(--surface); border-radius: 16px; padding: 6px 6px 6px 14px; align-items: center; border: 1.5px solid transparent }
 .quick:focus-within { border-color: var(--accent) }
@@ -310,8 +309,8 @@ textarea.csv { width: 100%; height: 110px; font: 12px/1.4 ui-monospace, monospac
       </div>
       <div class="pie-wrap">
         <div class="pie-box">
-          <svg class="pie" id="pie" viewBox="0 0 160 160" role="img" aria-label="Spending by category"></svg>
-          <div class="pie-center"><span class="num" id="heroAmt">$0</span><span class="small">spent</span></div>
+          <svg class="pie" id="pie" viewBox="0 0 180 180" role="img" aria-label="Spending by category"></svg>
+          <div class="pie-center"><span class="num" id="heroAmt">$0</span><span class="small" id="pieSub">spent</span></div>
         </div>
         <ul class="pie-legend" id="pieLegend"></ul>
       </div>
@@ -321,12 +320,6 @@ textarea.csv { width: 100%; height: 110px; font: 12px/1.4 ui-monospace, monospac
           <span id="spentOf"><strong class="num" id="leftLine">$0</strong> <span id="leftWord">left</span> of <span class="num" id="budgetLine">$0</span></span>
           <span id="perDay"></span>
         </div>
-      </div>
-      <div class="stats">
-        <div><span class="label">Income</span><span class="num" id="statIn">$0</span></div>
-        <div><span class="label">Spent</span><span class="num" id="statOut">$0</span></div>
-        <div><span class="label">Saved</span><span class="num" id="statNet">$0</span></div>
-        <div><span class="label">Left over</span><span class="num" id="statLeft">$0</span></div>
       </div>
     </div>
 
@@ -551,15 +544,19 @@ const $$ = s => [...document.querySelectorAll(s)];
 const KEY = 'pocket-ledger-v1';
 
 // Colours people can give their categories (all readable with white text)
-const CAT_COLORS = ['#2e9e6a', '#e0703a', '#3d7be0', '#6d5bd0', '#d04f86', '#d9a20f', '#1aa3a3', '#8a6a4f',
-  '#d64545', '#5b8c2a', '#b45cc9', '#2f7d9e', '#ef8a1f', '#4a5bd4', '#a3672b', '#7a8194'];
+// first eight checked for colour-blind separation, in this order
+const CAT_COLORS = ['#d2643a', '#3b76c4', '#bf8a10', '#9050b4', '#2f9a5e', '#b0602a', '#0b96a6', '#d24a80',
+  '#6f8f2a', '#c2453a', '#5b62d0', '#a87c52', '#2a7a8c', '#b5539c', '#d98a2b', '#7a8a99'];
+// categories made with the old palette pick up the matching new colour
+const OLD_COLORS = { '#2e9e6a': '#2f9a5e', '#e0703a': '#d2643a', '#3d7be0': '#3b76c4', '#6d5bd0': '#5b62d0', '#d04f86': '#d24a80', '#d9a20f': '#bf8a10', '#1aa3a3': '#0b96a6', '#8a6a4f': '#a87c52',
+  '#d64545': '#c2453a', '#5b8c2a': '#6f8f2a', '#b45cc9': '#9050b4', '#2f7d9e': '#2a7a8c', '#ef8a1f': '#d98a2b', '#4a5bd4': '#5b62d0', '#a3672b': '#b0602a', '#7a8194': '#7a8a99' };
 // App accent colours: [light theme, dark theme]
 const ACCENTS = {
-  cobalt: ['#2f52f5', '#8098ff'], violet: ['#7445e8', '#a98bff'], teal: ['#0f8a87', '#3fd0c9'], emerald: ['#178a50', '#4fd18e'],
+  clay: ['#c96442', '#e08a68'], cobalt: ['#2f52f5', '#8098ff'], violet: ['#7445e8', '#a98bff'], teal: ['#0f8a87', '#3fd0c9'], emerald: ['#178a50', '#4fd18e'],
   amber: ['#b86e00', '#f4b545'], coral: ['#dd4f38', '#ff8a73'], rose: ['#d23c78', '#ff7eb0'], graphite: ['#2a2f3a', '#d6dae3'],
 };
-const INCOME = { id: 'income', name: 'Income', color: '#11865a' };
-const NONE = { id: 'none', name: 'Uncategorised', color: '#7a8194' };
+const INCOME = { id: 'income', name: 'Income', color: '#3a7d4f' };
+const NONE = { id: 'none', name: 'Uncategorised', color: '#8c877d' };
 const SUGGESTIONS = ['Groceries', 'Eating out', 'Rent', 'Bills', 'Transport', 'Shopping', 'Fun', 'Health', 'Subscriptions', 'Travel', 'Gym', 'Gifts', 'Savings', 'Investments'];
 
 // Words that hint at a category. A group applies to any category whose name contains one of its aliases.
@@ -587,7 +584,7 @@ function guessCurrency() {
   } catch (e) {}
   return 'USD';
 }
-const freshState = (currency = guessCurrency()) => ({ v: 2, currency, startDay: 1, period: 'month', cats: [], setupDone: false, txns: [], accent: 'cobalt', theme: 'system' });
+const freshState = (currency = guessCurrency()) => ({ v: 2, currency, startDay: 1, period: 'month', cats: [], setupDone: false, txns: [], accent: 'clay', theme: 'system' });
 // v1 had fixed categories and example data; keep real entries, drop the examples
 const V1_CATS = { groceries: ['Groceries', 0], eating: ['Eating out', 1], transport: ['Transport', 2], bills: ['Rent & bills', 3], shopping: ['Shopping', 4],
   fun: ['Fun', 5], health: ['Health', 6], subs: ['Subscriptions', 7], other: ['Other', 15] };
@@ -606,7 +603,12 @@ function load() {
   return freshState();
 }
 let snap = new Map(), snapSettings = '';
-const prefs = () => ({ categories: S.cats, setupDone: !!S.setupDone, accent: S.accent, theme: S.theme, period: S.period || 'month' });
+const prefs = () => ({ categories: S.cats, setupDone: !!S.setupDone, accent: S.accent, theme: S.theme, period: S.period || 'month', look: S.look || 0 });
+// one-time move to the warmer palette: old category colours map to their new versions, and the old default accent becomes clay
+function upgradeLook() {
+  S.cats.forEach(c => { const n = OLD_COLORS[String(c.color).toLowerCase()]; if (n) c.color = n; });
+  if (!S.look) { if (S.accent === 'cobalt') S.accent = 'clay'; S.look = 2; }
+}
 const settingsJSON = () => JSON.stringify([S.currency, S.startDay, prefs()]);
 function snapshot() { snap = new Map(S.txns.map(t => [t.id, JSON.stringify(t)])); snapSettings = settingsJSON(); }
 function persist() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
@@ -638,12 +640,12 @@ function applyAppearance() {
   else if (themeSetByApp) { root.removeAttribute('data-theme'); themeSetByApp = false; }
   const attr = root.getAttribute('data-theme');
   const dark = attr ? attr === 'dark' : mqDark.matches;
-  const a = ACCENTS[S.accent] || ACCENTS.cobalt;
+  const a = ACCENTS[S.accent] || ACCENTS.clay;
   root.style.setProperty('--accent', a[dark ? 1 : 0]);
-  root.style.setProperty('--accent-ink', dark ? '#0d0f14' : '#ffffff');
+  root.style.setProperty('--accent-ink', dark ? '#1f1e1d' : '#ffffff');
   root.style.setProperty('--accent-soft', `color-mix(in srgb, ${a[dark ? 1 : 0]} ${dark ? 18 : 12}%, var(--surface))`);
   const meta = document.querySelector('meta[name="theme-color"]:not([media])') || null;
-  if (meta) meta.content = dark ? '#0d0f14' : '#f2f3f7';
+  if (meta) meta.content = dark ? '#1f1e1d' : '#f4f1ea';
 }
 mqDark.addEventListener && mqDark.addEventListener('change', applyAppearance);
 const swatchHTML = (colors, selected, attr) => colors.map(([key, c]) => `<button type="button" class="swatch" style="background:${c}" ${attr}="${key}" aria-pressed="${key === selected}" aria-label="${esc(key)}"></button>`).join('');
@@ -757,13 +759,6 @@ function renderHome(p) {
     $('#spentOf').hidden = true; $('#budgetWrap').hidden = true;
     $('#perDay').innerHTML = `<button class="link" data-act="${S.cats.length ? 'plan' : 'setup'}">Set ${PW().unit}ly limits</button>`;
   }
-  $('#statIn').textContent = money(inc, { round: true });
-  $('#statOut').textContent = money(out, { round: true });
-  // Saved = money moved into savings/investments; Left over = income not spent or saved
-  $('#statNet').textContent = money(saved, { round: true });
-  $('#statNet').style.color = saved > 0 ? 'var(--good)' : '';
-  $('#statLeft').textContent = money(inc - out - saved, { round: true });
-  $('#statLeft').style.color = inc - out - saved < 0 ? 'var(--bad)' : '';
 
   // repeat chips: most frequent note+cat combos from last 60 days
   const since = Date.now() - 60 * 864e5; const freq = {};
@@ -809,21 +804,26 @@ function renderPie(tx, out) {
   let items = Object.entries(byCat).map(([id, v]) => ({ c: catById(id), v })).sort((a, b) => b.v - a.v);
   if (items.length > 6) { // fold the tail into one slice rather than inventing more colours
     const rest = items.slice(5).reduce((a, x) => a + x.v, 0);
-    items = items.slice(0, 5).concat([{ c: { id: '', name: `${items.length - 5} more`, color: '#8a90a0' }, v: rest }]);
+    items = items.slice(0, 5).concat([{ c: { id: '', name: `${items.length - 5} more`, color: '#8c877d' }, v: rest }]);
   }
-  const r = 62, C = 2 * Math.PI * r, gap = items.length > 1 ? 2 : 0;
+  // thin ring, rounded ends, a small gap between slices
+  const r = 70, sw = 14, C = 2 * Math.PI * r, gap = items.length > 1 ? 5 : 0, round = items.length > 1;
   let acc = 0;
   const arcs = items.map((it, i) => {
     const len = out ? it.v / out * C : 0;
-    const arc = `<circle cx="80" cy="80" r="${r}" fill="none" stroke="${it.c.color}" stroke-width="24" data-pie="${i}"
-      stroke-dasharray="${Math.max(len - gap, 0.6).toFixed(2)} ${C.toFixed(2)}" stroke-dashoffset="${(-acc).toFixed(2)}"><title>${esc(it.c.name)}: ${esc(money(it.v))}</title></circle>`;
+    const vis = round ? Math.max(len - gap - sw, 0.01) : len; // round caps add half the stroke at each end
+    const off = round ? acc + sw / 2 + gap / 2 : acc;
+    const arc = `<circle cx="90" cy="90" r="${r}" fill="none" stroke="${it.c.color}" stroke-width="${sw}" stroke-linecap="${round ? 'round' : 'butt'}" data-pie="${i}"
+      stroke-dasharray="${vis.toFixed(2)} ${C.toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}"><title>${esc(it.c.name)}: ${esc(money(it.v))}</title></circle>`;
     acc += len; return arc;
   }).join('');
-  $('#pie').innerHTML = `<g transform="rotate(-90 80 80)"><circle cx="80" cy="80" r="${r}" fill="none" stroke="var(--surface-2)" stroke-width="24"/>${arcs}</g>`;
+  $('#pie').innerHTML = `<g transform="rotate(-90 90 90)"><circle cx="90" cy="90" r="${r}" fill="none" stroke="var(--surface-2)" stroke-width="${sw}"/>${arcs}</g>`;
   $('#pie').setAttribute('aria-label', items.length ? 'Spending by category: ' + items.map(it => `${it.c.name} ${money(it.v)}`).join(', ') : 'Nothing spent yet');
+  const budget = totalBudget();
+  $('#pieSub').textContent = budget > 0 ? `of ${money(budget, { round: true })}` : 'spent';
   $('#pieLegend').innerHTML = items.length ? items.map((it, i) => `<li><button ${it.c.id ? `data-filter="${it.c.id}"` : 'data-go="activity"'} data-pieleg="${i}">
       <span class="sw" style="background:${it.c.color}"></span><span class="nm">${esc(it.c.name)}</span>
-      <span class="v">${money(it.v, { round: true })}<small>${Math.round(it.v / out * 100)}%</small></span></button></li>`).join('')
+      <span class="v">${money(it.v, { round: true })}</span><span class="pc">${Math.round(it.v / out * 100)}%</span></button></li>`).join('')
     : `<li class="empty-note">Nothing spent yet ${PW().cur}. Log a purchase and it shows up here.</li>`;
 }
 
@@ -1378,7 +1378,7 @@ $('#dlCsv').addEventListener('click', () => {
 $$('.sheet').forEach(sh => { let y0 = null; sh.addEventListener('touchstart', e => { y0 = sh.scrollTop <= 0 ? e.touches[0].clientY : null; }, { passive: true });
   sh.addEventListener('touchend', e => { if (y0 !== null && e.changedTouches[0].clientY - y0 > 80) closeSheets(); y0 = null; }); });
 
-S = load(); persist(); snapshot();
+S = load(); upgradeLook(); persist(); snapshot();
 window.Ledger = {
   state: () => S,
   render: () => render(),
@@ -1392,7 +1392,7 @@ window.Ledger = {
     if (settings) {
       if (settings.currency) S.currency = settings.currency; if (settings.startDay) S.startDay = settings.startDay;
       const b = settings.budgets;
-      if (b && Array.isArray(b.categories)) { S.cats = b.categories; S.setupDone = b.setupDone !== false; if (b.accent) S.accent = b.accent; if (b.theme) S.theme = b.theme; if (b.period) S.period = b.period; }
+      if (b && Array.isArray(b.categories)) { S.cats = b.categories; S.setupDone = b.setupDone !== false; if (b.accent && (b.look || b.accent !== 'cobalt')) S.accent = b.accent; if (b.theme) S.theme = b.theme; if (b.period) S.period = b.period; if (b.look) S.look = b.look; upgradeLook(); }
     }
     persist(); snapshot(); render();
   },
