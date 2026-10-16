@@ -65,7 +65,9 @@
         const local = Ledger.prefs(), st = Ledger.state();
         const rCats = remote && remote.budgets && Array.isArray(remote.budgets.categories) ? remote.budgets.categories : [];
         if (!remote) { if (!meta.settings) meta.settings = ++seq; }
-        else if (meta.firstLink || remote.updated_at !== meta.settingsAt) {
+        // also act when one side has categories and the other has none, even if the timestamps
+        // match: that repairs devices that picked up an empty list from an older version
+        else if (meta.firstLink || remote.updated_at !== meta.settingsAt || !rCats.length !== !local.categories.length) {
           const ids = new Set(local.categories.map(c => c.id));
           const missing = rCats.filter(c => !ids.has(c.id));
           // edits waiting here, a first sign-in on a device that already has categories,
