@@ -15,6 +15,8 @@
   let meta = (() => { try { return { ...fresh(), ...JSON.parse(localStorage.getItem(META) || '{}') }; } catch (e) { return fresh(); } })();
   const saveMeta = () => { try { localStorage.setItem(META, JSON.stringify(meta)); } catch (e) {} };
   let seq = Date.now(); // version stamp so edits made mid-sync are not lost
+  const VERSION = 13; // shown in Settings so we can tell which version a device is running
+  let acct = null; // the account's category ids as of the last sync, for the check line in Settings
   let user = null, syncing = false, again = false, timer = null, lastError = '';
 
   // ---------- local change queue ----------
@@ -88,6 +90,7 @@
         // entries here point at a category only the account has, or at one only this device has:
         // repair either way, even if the timestamps match (devices on older versions could lose them)
         const orphaned = missing.some(c => used.has(c.id));
+        acct = rIds;
         const accountLacks = local.categories.some(c => used.has(c.id) && !rIds.has(c.id));
         if (!remote) { if (!meta.settings) meta.settings = ++seq; }
         else if (meta.firstLink || remote.updated_at !== meta.settingsAt || !rCats.length !== !local.categories.length || orphaned || accountLacks) {
@@ -107,6 +110,7 @@
         const { data, error } = await sb.from('settings').upsert({ user_id: user.id, currency: st.currency, start_day: st.startDay || 1, budgets: Ledger.prefs() }).select().single();
         if (error) throw error;
         meta.settingsAt = data.updated_at; if (meta.settings === v) meta.settings = 0;
+        acct = new Set(Ledger.prefs().categories.map(c => c.id));
       }
 
       meta.lastPulled = maxTs;
@@ -217,7 +221,13 @@
     const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     if (user) {
       const status = lastError ? 'Sync problem: ' + esc(lastError) : !navigator.onLine ? 'Offline, will sync later' : syncing ? 'Syncing…' : meta.lastSync ? 'Synced ' + ago(meta.lastSync) : 'Syncing…';
-      row.innerHTML = `<span style="min-width:0">${esc(user.email || 'Signed in')}<br><span class="small">${status}</span></span><button class="btn ghost" id="signOutBtn" style="flex:0 0 auto">Sign out</button>`;
+      // a quick check line: which version runs here and whether categories match the account's
+      const S = Ledger.state(), here = new Set(S.cats.map(c => c.id));
+      const lost = new Set(S.txns.map(t => t.cat).filter(id => id !== 'none' && id !== 'income' && !here.has(id)));
+      const lostN = S.txns.filter(t => lost.has(t.cat)).length;
+      const check = `Check: version ${VERSION} · ${S.cats.length} categories here, ${acct ? acct.size : '?'} on account · `
+        + (lostN ? `${lostN} entries point at ${lost.size} unknown categor${lost.size > 1 ? 'ies' : 'y'}, ${acct ? [...lost].filter(id => acct.has(id)).length : '?'} of them on the account` : 'every entry has its category');
+      row.innerHTML = `<span style="min-width:0">${esc(user.email || 'Signed in')}<br><span class="small">${status}</span><br><span class="small">${check}</span></span><button class="btn ghost" id="signOutBtn" style="flex:0 0 auto">Sign out</button>`;
       $('#signOutBtn').onclick = signOut;
     } else {
       row.innerHTML = `<span>Sync across devices<br><span class="small">Sign in to back up your budget</span></span><button class="btn" id="signInBtn" style="flex:0 0 auto">Sign in</button>`;
