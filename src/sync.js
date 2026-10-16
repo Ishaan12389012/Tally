@@ -55,13 +55,28 @@
       Object.entries(dirty).forEach(([id, v]) => { if (meta.dirty[id] === v) delete meta.dirty[id]; });
       Object.entries(gone).forEach(([id, v]) => { if (meta.deleted[id] === v) delete meta.deleted[id]; });
 
-      // 2. settings: on a new device the account's settings win; otherwise push local edits
+      // 2. settings: take changes made on other devices. When this device has its own changes
+      // too, keep every category from both sides and push the result, so one device's copy
+      // can never wipe out categories that only exist on another
       let remoteSettings = null;
-      if (meta.firstLink || !meta.settings) {
-        const { data, error } = await sb.from('settings').select('*').maybeSingle();
+      {
+        const { data: remote, error } = await sb.from('settings').select('*').maybeSingle();
         if (error) throw error;
-        if (data && data.updated_at !== meta.settingsAt) { remoteSettings = data; meta.settingsAt = data.updated_at; }
-        else if (!data && meta.firstLink) meta.settings = ++seq;
+        const local = Ledger.prefs(), st = Ledger.state();
+        const rCats = remote && remote.budgets && Array.isArray(remote.budgets.categories) ? remote.budgets.categories : [];
+        if (!remote) { if (!meta.settings) meta.settings = ++seq; }
+        else if (meta.firstLink || remote.updated_at !== meta.settingsAt) {
+          const ids = new Set(local.categories.map(c => c.id));
+          const missing = rCats.filter(c => !ids.has(c.id));
+          // edits waiting here, a first sign-in on a device that already has categories,
+          // or an account copy that has lost its categories
+          if (local.categories.length && (meta.settings || meta.firstLink || !rCats.length)) {
+            if (missing.length) Ledger.applyRemote({ settings: { currency: st.currency, startDay: st.startDay,
+              budgets: { ...local, categories: local.categories.concat(missing), setupDone: local.setupDone || remote.budgets?.setupDone !== false } } });
+            if (!meta.settings) meta.settings = ++seq;
+          } else remoteSettings = remote; // nothing local to keep: the account's copy wins
+          meta.settingsAt = remote.updated_at;
+        }
         meta.firstLink = false;
       }
       if (meta.settings) {
