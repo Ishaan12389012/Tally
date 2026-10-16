@@ -55,40 +55,8 @@
       Object.entries(dirty).forEach(([id, v]) => { if (meta.dirty[id] === v) delete meta.dirty[id]; });
       Object.entries(gone).forEach(([id, v]) => { if (meta.deleted[id] === v) delete meta.deleted[id]; });
 
-      // 2. settings: take changes made on other devices. When this device has its own changes
-      // too, keep every category from both sides and push the result, so one device's copy
-      // can never wipe out categories that only exist on another
-      let remoteSettings = null;
-      {
-        const { data: remote, error } = await sb.from('settings').select('*').maybeSingle();
-        if (error) throw error;
-        const local = Ledger.prefs(), st = Ledger.state();
-        const rCats = remote && remote.budgets && Array.isArray(remote.budgets.categories) ? remote.budgets.categories : [];
-        if (!remote) { if (!meta.settings) meta.settings = ++seq; }
-        // also act when one side has categories and the other has none, even if the timestamps
-        // match: that repairs devices that picked up an empty list from an older version
-        else if (meta.firstLink || remote.updated_at !== meta.settingsAt || !rCats.length !== !local.categories.length) {
-          const ids = new Set(local.categories.map(c => c.id));
-          const missing = rCats.filter(c => !ids.has(c.id));
-          // edits waiting here, a first sign-in on a device that already has categories,
-          // or an account copy that has lost its categories
-          if (local.categories.length && (meta.settings || meta.firstLink || !rCats.length)) {
-            if (missing.length) Ledger.applyRemote({ settings: { currency: st.currency, startDay: st.startDay,
-              budgets: { ...local, categories: local.categories.concat(missing), setupDone: local.setupDone || remote.budgets?.setupDone !== false } } });
-            if (!meta.settings) meta.settings = ++seq;
-          } else remoteSettings = remote; // nothing local to keep: the account's copy wins
-          meta.settingsAt = remote.updated_at;
-        }
-        meta.firstLink = false;
-      }
-      if (meta.settings) {
-        const v = meta.settings; const st = Ledger.state();
-        const { data, error } = await sb.from('settings').upsert({ user_id: user.id, currency: st.currency, start_day: st.startDay || 1, budgets: Ledger.prefs() }).select().single();
-        if (error) throw error;
-        meta.settingsAt = data.updated_at; if (meta.settings === v) meta.settings = 0;
-      }
-
-      // 3. pull everything changed since the last pull
+      // 2. pull everything changed since the last pull (before settings, so the check below
+      // sees which categories entries use now)
       const ups = [], dels = []; let maxTs = meta.lastPulled;
       for (let offset = 0; ; offset += 1000) {
         let q = sb.from('transactions').select('*').order('updated_at').order('id').range(offset, offset + 999);
@@ -103,6 +71,44 @@
         });
         if (data.length < 1000) break;
       }
+      // 3. settings: take changes made on other devices. When this device has its own changes
+      // too, keep every category from both sides and push the result, so one device's copy
+      // can never wipe out categories that only exist on another
+      let remoteSettings = null;
+      {
+        const { data: remote, error } = await sb.from('settings').select('*').maybeSingle();
+        if (error) throw error;
+        const local = Ledger.prefs(), st = Ledger.state();
+        const rCats = remote && remote.budgets && Array.isArray(remote.budgets.categories) ? remote.budgets.categories : [];
+        // which categories entries use, after this sync's pulled changes
+        const pulled = new Set(dels.concat(ups.map(t => t.id))), used = new Set(ups.map(t => t.cat));
+        st.txns.forEach(t => { if (!pulled.has(t.id)) used.add(t.cat); });
+        const ids = new Set(local.categories.map(c => c.id)), rIds = new Set(rCats.map(c => c.id));
+        const missing = rCats.filter(c => !ids.has(c.id));
+        // entries here point at a category only the account has, or at one only this device has:
+        // repair either way, even if the timestamps match (devices on older versions could lose them)
+        const orphaned = missing.some(c => used.has(c.id));
+        const accountLacks = local.categories.some(c => used.has(c.id) && !rIds.has(c.id));
+        if (!remote) { if (!meta.settings) meta.settings = ++seq; }
+        else if (meta.firstLink || remote.updated_at !== meta.settingsAt || !rCats.length !== !local.categories.length || orphaned || accountLacks) {
+          // edits waiting here, a first sign-in on a device that already has categories,
+          // or an account copy that is missing categories this device's entries use
+          if (local.categories.length && (meta.settings || meta.firstLink || !rCats.length || accountLacks)) {
+            if (missing.length) Ledger.applyRemote({ settings: { currency: st.currency, startDay: st.startDay,
+              budgets: { ...local, categories: local.categories.concat(missing), setupDone: local.setupDone || remote.budgets?.setupDone !== false } } });
+            if (!meta.settings) meta.settings = ++seq;
+          } else { remoteSettings = remote; meta.settings = 0; } // nothing local to keep: the account's copy wins, and this device's empty list is never pushed
+          meta.settingsAt = remote.updated_at;
+        }
+        meta.firstLink = false;
+      }
+      if (meta.settings) {
+        const v = meta.settings; const st = Ledger.state();
+        const { data, error } = await sb.from('settings').upsert({ user_id: user.id, currency: st.currency, start_day: st.startDay || 1, budgets: Ledger.prefs() }).select().single();
+        if (error) throw error;
+        meta.settingsAt = data.updated_at; if (meta.settings === v) meta.settings = 0;
+      }
+
       meta.lastPulled = maxTs;
       if (ups.length || dels.length || remoteSettings) {
         Ledger.applyRemote({ upserts: ups, deletes: dels, settings: remoteSettings && { currency: remoteSettings.currency, startDay: remoteSettings.start_day, budgets: remoteSettings.budgets } });
