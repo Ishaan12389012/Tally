@@ -139,6 +139,22 @@ section { display: flex; flex-direction: column; gap: 10px }
 .search { display: flex; gap: 8px }
 .search input { flex: 1; min-width: 0; background: var(--surface); border: 1.5px solid var(--line); border-radius: 14px; padding: 11px 14px; outline: 0 }
 .search input:focus { border-color: var(--accent) }
+.search .sel-toggle { flex: 0 0 auto; padding: 0 16px; border-radius: 14px }
+.selecting .search .sel-toggle { background: var(--accent); color: var(--accent-ink) }
+.tick { width: 22px; height: 22px; flex: none; border-radius: 50%; border: 1.5px solid var(--line); display: grid; place-items: center; transition: background .15s, border-color .15s }
+.tick svg { width: 13px; height: 13px; opacity: 0 }
+.row.on .tick, .day-sel.on .tick { background: var(--accent); border-color: var(--accent); color: var(--accent-ink) }
+.row.on .tick svg, .day-sel.on .tick svg { opacity: 1 }
+.row.on { background: var(--accent-soft) }
+.day-sel { display: inline-flex; align-items: center; gap: 8px; font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit }
+.day-sel .tick { width: 18px; height: 18px }
+.day-sel .tick svg { width: 11px; height: 11px }
+.sel-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 11; padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-top: 1px solid var(--line) }
+.sel-inner { max-width: 520px; margin: 0 auto; display: flex; align-items: center; gap: 10px }
+.sel-info { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.25 }
+.sel-bar .btn { flex: 0 0 auto; padding: 11px 16px }
+.sel-bar .btn:disabled { opacity: .45 }
+body.selecting .tabs { display: none }
 .filters { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin-inline: -16px; padding-inline: 16px }
 .filters::-webkit-scrollbar { display: none }
 .filters button { flex: none; padding: 6px 12px; border-radius: 99px; background: var(--surface); border: 1px solid var(--line); font-size: 13px; font-weight: 500 }
@@ -347,7 +363,7 @@ textarea.csv { width: 100%; height: 110px; font: 12px/1.4 ui-monospace, monospac
       <div><span class="label">Spent</span><span class="num" id="actOut">$0</span></div>
       <div><span class="label">Saved</span><span class="num amt save" id="actSaved">$0</span></div>
     </div>
-    <div class="search"><input id="search" type="search" placeholder="Search notes, categories, amounts" aria-label="Search"></div>
+    <div class="search"><input id="search" type="search" placeholder="Search notes, categories, amounts" aria-label="Search"><button class="btn ghost sel-toggle" id="selectBtn" type="button">Select</button></div>
     <div class="filters" id="filters"></div>
     <div id="activityList" class="view" style="gap:10px"></div>
   </div>
@@ -514,6 +530,10 @@ textarea.csv { width: 100%; height: 110px; font: 12px/1.4 ui-monospace, monospac
   </form>
 </div>
 
+<div class="sel-bar" id="selBar" hidden>
+  <div class="sel-inner"><span class="sel-info"><strong id="selCount">0 selected</strong><span class="small num" id="selSum"></span></span>
+    <button class="btn ghost" id="selAll" type="button">Select all</button><button class="btn danger" id="selDelete" type="button" disabled>Delete</button></div>
+</div>
 <div class="toast" id="toast" role="status"><span id="toastText"></span><button id="toastUndo">Undo</button></div>
 
 <script>
@@ -906,13 +926,29 @@ function relDay(dateStr) {
   if (diff === 0) return 'Today'; if (diff === 1) return 'Yesterday';
   return d.toLocaleDateString(undefined, { weekday: diff < 7 ? 'long' : 'short', day: 'numeric', month: 'short' });
 }
-function txRow(t) {
+const TICK = '<span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>';
+function txRow(t, selectable) {
   const c = catById(t.cat);
+  if (selectable) return `<button class="row${sel.has(t.id) ? ' on' : ''}" data-sel="${t.id}" aria-pressed="${sel.has(t.id)}">${TICK}${dot(c)}<div class="main"><span class="title">${esc(t.note || c.name)}</span><span class="sub">${esc(c.name)} · ${relDay(t.date)}</span></div>
+    <span class="amt num ${t.type === 'in' ? 'in' : isSave(t) ? 'save' : ''}">${t.type === 'in' ? '+' : ''}${money(t.amt)}</span></button>`;
   return `<button class="row" data-edit="${t.id}">${dot(c)}<div class="main"><span class="title">${esc(t.note || c.name)}</span><span class="sub">${esc(c.name)} · ${relDay(t.date)}</span></div>
     <span class="amt num ${t.type === 'in' ? 'in' : isSave(t) ? 'save' : ''}">${t.type === 'in' ? '+' : ''}${money(t.amt)}</span></button>`;
 }
 
 let filterCat = null;
+// select mode: tick entries or whole days, then delete them together
+let selMode = false; const sel = new Set(); let selVisible = [];
+function setSelect(on) {
+  selMode = on; sel.clear(); document.body.classList.toggle('selecting', on);
+  $('#selectBtn').textContent = on ? 'Done' : 'Select'; $('#selBar').hidden = !on; render();
+}
+function renderSelBar() {
+  const picked = S.txns.filter(t => sel.has(t.id));
+  $('#selCount').textContent = picked.length ? `${picked.length} selected` : 'Tap entries or a day';
+  $('#selSum').textContent = picked.length ? money(sum(picked.filter(t => t.type === 'out'))) + ' out' + (picked.some(t => t.type === 'in') ? ` · +${money(sum(picked.filter(t => t.type === 'in')))} in` : '') : '';
+  $('#selDelete').disabled = !picked.length;
+  $('#selAll').textContent = selVisible.length && selVisible.every(id => sel.has(id)) ? 'Clear' : 'Select all';
+}
 function renderActivity(p) {
   const q = $('#search').value.trim().toLowerCase();
   let tx = txIn(p);
@@ -927,10 +963,14 @@ function renderActivity(p) {
   if (q) tx = tx.filter(t => (t.note + ' ' + catById(t.cat).name + ' ' + t.amt).toLowerCase().includes(q));
   tx.sort(byNewest);
   const groups = {}; tx.forEach(t => (groups[t.date] ||= []).push(t));
+  selVisible = tx.map(t => t.id);
   $('#activityList').innerHTML = Object.keys(groups).length ? Object.entries(groups).map(([d, list]) => {
     const spent = sum(list.filter(isSpend));
-    return `<div class="day-head"><span>${relDay(d)}</span><span class="num">${spent ? money(spent) + ' spent' : ''}</span></div><div class="list">${list.map(txRow).join('')}</div>`;
+    const allOn = list.every(t => sel.has(t.id));
+    const label = selMode ? `<button class="day-sel${allOn ? ' on' : ''}" data-selday="${d}" aria-pressed="${allOn}">${TICK}${relDay(d)}</button>` : `<span>${relDay(d)}</span>`;
+    return `<div class="day-head">${label}<span class="num">${spent ? money(spent) + ' spent' : ''}</span></div><div class="list">${list.map(t => txRow(t, selMode)).join('')}</div>`;
   }).join('') : `<div class="empty">${q || filterCat ? `No matches ${PW().cur}.` : `No transactions ${PW().cur}.`}</div>`;
+  if (selMode) renderSelBar();
 }
 
 function renderPlan() {
@@ -1221,7 +1261,7 @@ function importCSV(text) {
 
 // ---------- events ----------
 let eraseArmed = false;
-function go(t) { tab = t; render(); window.scrollTo({ top: 0 }); }
+function go(t) { tab = t; if (selMode && t !== 'activity') { selMode = false; sel.clear(); document.body.classList.remove('selecting'); $('#selectBtn').textContent = 'Select'; $('#selBar').hidden = true; } render(); window.scrollTo({ top: 0 }); }
 document.addEventListener('click', e => {
   const el = e.target.closest('button, [data-go], [data-cycle]'); if (!el) return;
   if (el.dataset.tab) return go(el.dataset.tab);
@@ -1245,6 +1285,11 @@ document.addEventListener('click', e => {
     let i = CAT_COLORS.indexOf(c.color);
     for (let n = 0; n < CAT_COLORS.length; n++) { i = (i + 1) % CAT_COLORS.length; if (!used.has(CAT_COLORS[i])) break; }
     c.color = CAT_COLORS[i]; return renderSetup();
+  }
+  if (el.dataset.sel) { sel.has(el.dataset.sel) ? sel.delete(el.dataset.sel) : sel.add(el.dataset.sel); return render(); }
+  if (el.dataset.selday) {
+    const ids = selVisible.filter(id => { const t = S.txns.find(x => x.id === id); return t && t.date === el.dataset.selday; });
+    const allOn = ids.every(id => sel.has(id)); ids.forEach(id => allOn ? sel.delete(id) : sel.add(id)); return render();
   }
   if (el.dataset.edit) { const t = S.txns.find(x => x.id === el.dataset.edit); if (t) openAdd(t); return; }
   if (el.dataset.filter) { filterCat = el.dataset.filter; $('#search').value = ''; return go('activity'); }
@@ -1287,6 +1332,13 @@ $('#delBtn').addEventListener('click', () => {
   toast('Deleted', () => commit(t, true));
 });
 $('#noteInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); if (draft.editing) saveDraft(); else if (+draft.amtStr > 0) saveDraft(draft.type === 'in' ? 'income' : guessCat(e.target.value)); } });
+$('#selectBtn').addEventListener('click', () => setSelect(!selMode));
+$('#selAll').addEventListener('click', () => { const all = selVisible.every(id => sel.has(id)); selVisible.forEach(id => all ? sel.delete(id) : sel.add(id)); render(); });
+$('#selDelete').addEventListener('click', () => {
+  const gone = S.txns.filter(t => sel.has(t.id)); if (!gone.length) return;
+  S.txns = S.txns.filter(t => !sel.has(t.id)); save(); setSelect(false);
+  toast(`Deleted ${gone.length} ${gone.length === 1 ? 'entry' : 'entries'}`, () => { S.txns = S.txns.concat(gone); save(); render(); });
+});
 $('#toastUndo').addEventListener('click', () => { if (undoFn) undoFn(); undoFn = null; $('#toast').classList.remove('show'); });
 $('#prevM').addEventListener('click', () => { viewOffset--; render(); });
 $('#nextM').addEventListener('click', () => { if (viewOffset < 0) viewOffset++; render(); });
