@@ -193,7 +193,7 @@
     const row = $('#accountRow'); if (!row) return; row.hidden = false;
     const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     if (user) {
-      const status = lastError ? 'Sync problem, retrying' : !navigator.onLine ? 'Offline, will sync later' : syncing ? 'Syncing…' : meta.lastSync ? 'Synced ' + ago(meta.lastSync) : 'Syncing…';
+      const status = lastError ? 'Sync problem: ' + esc(lastError) : !navigator.onLine ? 'Offline, will sync later' : syncing ? 'Syncing…' : meta.lastSync ? 'Synced ' + ago(meta.lastSync) : 'Syncing…';
       row.innerHTML = `<span style="min-width:0">${esc(user.email || 'Signed in')}<br><span class="small">${status}</span></span><button class="btn ghost" id="signOutBtn" style="flex:0 0 auto">Sign out</button>`;
       $('#signOutBtn').onclick = signOut;
     } else {

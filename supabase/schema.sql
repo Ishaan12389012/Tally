@@ -54,3 +54,8 @@ drop policy if exists "own settings" on public.settings;
 create policy "own settings" on public.settings
   for all to authenticated
   using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
+
+-- Some newer Supabase projects don't give signed-in users access to new tables automatically.
+-- Row level security above still limits each person to their own rows.
+grant select, insert, update, delete on public.transactions to authenticated;
+grant select, insert, update, delete on public.settings to authenticated;
